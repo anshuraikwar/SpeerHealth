@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "insightboard-2",
-    "slug": "insightboard-2",
+    "name": "insightboard",
+    "slug": "insightboard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

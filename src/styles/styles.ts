@@ -1,0 +1,100 @@
+import { StyleSheet } from 'react-native'
+
+export const appStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: 52,
+    paddingBottom: 12,
+    padding: 12,
+    backgroundColor: '#000000',
+  },
+  verticallySpaced: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    alignSelf: 'stretch',
+  },
+  mt20: {
+    marginTop: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#86939e',
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#86939e',
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 16,
+    color: '#fff',
+  },
+  inputDisabled: {
+    backgroundColor: '#f2f2f2',
+    borderColor: '#d1d1d1',
+    color: '#9e9e9e',
+  },
+  button: {
+    backgroundColor: '#2089dc',
+    borderRadius: 4,
+    padding: 12,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  avatar: {
+    borderRadius: 5,
+    overflow: 'hidden',
+    maxWidth: '100%',
+    marginBottom: 20,
+  },
+  image: {
+    objectFit: 'cover',
+    paddingTop: 0,
+  },
+  noImage: {
+    backgroundColor: '#333',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'rgb(200, 200, 200)',
+    borderRadius: 5,
+  },
+})
+
+
+export const priorityColors: Record<
+  string,
+  {
+    container: string;
+    text: string;
+  }
+> = {
+  P1: {
+    container: '#DC2626',
+    text: '#FFFFFF',
+  },
+  P2: {
+    container: '#EA580C',
+    text: '#FFFFFF',
+  },
+  P3: {
+    container: '#CA8A04',
+    text: '#FFFFFF',
+  },
+  P4: {
+    container: '#455A64',
+    text: '#FFFFFF',
+  },
+};
