@@ -13,4 +13,8 @@ export type Activity = {
   oldValue?: string | null;
   newValue?: string | null;
   createdAt: string;
+  user :{
+    id:string;
+    fullName:string;
+  }
 };

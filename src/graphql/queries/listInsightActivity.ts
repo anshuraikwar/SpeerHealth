@@ -13,7 +13,11 @@ export const LIST_INSIGHT_ACTIVITY = gql`
         node {
           id
           insightId
-          userId
+          user {
+            nodeId
+            id
+            fullName
+          }
           action
           fieldName
           oldValue

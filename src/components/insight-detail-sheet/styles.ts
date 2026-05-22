@@ -12,15 +12,21 @@ export const styles = StyleSheet.create({
 
   sheetWrapper: {
     width: '100%',
+    maxHeight: '85%',
+    padding: 0,
+    flex: 1,
+    overflow: 'hidden',
   },
 
   sheet: {
-    backgroundColor: '#1e1e1e',
+    height: '100%',
+    minHeight: 300,
     padding: 24,
     paddingTop: 8,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    minHeight: 300,
+    backgroundColor: '#1e1e1e',
+    flex: 1,
   },
 
   handle: {
@@ -33,7 +39,6 @@ export const styles = StyleSheet.create({
   },
 
   activityContainer: {
-    marginTop: 8,
     borderWidth: 0.5,
     borderColor: "rgb(73,69,79)",
     borderRadius: 8,

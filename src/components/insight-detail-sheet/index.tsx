@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
+import { styles } from './styles';
 import { priorityColors } from '../../styles/styles';
+
 import { InsightType } from '../../type/InsightType';
+import { Activity, ActivityResponseType } from '../../type/ActivityType';
+
 import { getRelativeTime } from '../../utils/time-utils';
+
+import { useQuery } from '@apollo/client/react';
+import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
+
 import {
   Pressable,
   View,
-  StyleSheet,
   Modal,
   FlatList,
 } from 'react-native';
@@ -19,10 +26,7 @@ import {
   Chip,
   useTheme,
 } from 'react-native-paper';
-import { useQuery } from '@apollo/client/react';
-import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
-import { Activity, ActivityResponseType } from '../../type/ActivityType';
-import { styles } from './styles';
+import { ScrollView } from 'react-native-gesture-handler';
 
 
 export default function InsightDetailSheet({
@@ -44,39 +48,14 @@ export default function InsightDetailSheet({
     priorityColors[insight?.priority] ??
     priorityColors.P4;
 
-  const { data, loading: loadingActivity } = useQuery<ActivityResponseType>(LIST_INSIGHT_ACTIVITY, {
+  const { data, loading: loadingActivity, error: activityError } = useQuery<ActivityResponseType>(LIST_INSIGHT_ACTIVITY, {
     variables: {
       insightId: insight?.id,
     },
     fetchPolicy: 'cache-and-network',
   });
+
   const activities = data?.insightActivitiesCollection?.edges.map(item => item.node) ?? [];
-  const renderRow = ({ item }: { item: Activity }) => (
-    <>
-      <View style={styles.row}>
-        <Text style={[styles.cell, styles.action]}>
-          {item.action}
-        </Text>
-
-        <Text style={styles.cell}>
-          {item.fieldName || "-"}
-        </Text>
-
-        <Text style={styles.cell}>
-          {`"${item.oldValue}"` || "-"}
-        </Text>
-
-        <Text style={styles.cell}>
-          {`"${item.newValue}"` || "-"}
-        </Text>
-
-        <Text style={styles.cell}>
-          {getRelativeTime(item.createdAt)}
-        </Text>
-      </View>
-      <Divider />
-    </>
-  );
 
   if (!insight) return <></>;
 
@@ -103,235 +82,344 @@ export default function InsightDetailSheet({
               <Text variant="titleLarge" style={{ marginBottom: 4, }}>
                 {insight.title}
               </Text>
-
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {insight.description}
               </Text>
 
               <Divider style={{ marginVertical: 12, }} />
 
-              {/* HCP */}
-              <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                  HCP Details
-                </Text>
+              <ScrollView
+                contentContainerStyle={{
+                  paddingBottom: 32,
+                }}
+                showsVerticalScrollIndicator={false}
+              >
 
-                <View style={{ flexDirection: 'column' }}>
-                  <Text style={{ textAlign: 'right' }}>
-                    {insight.hcp?.name}
-                  </Text>
-                  <Text style={{ textAlign: 'right', color: theme.colors.onSurfaceVariant }}>
-                    {insight.hcp?.specialty}
-                  </Text>
-                  <Text style={{ textAlign: 'right', color: theme.colors.onSurfaceVariant }}>
-                    {insight.hcp?.institution}
-                  </Text>
-                </View>
-              </View>
-
-              {/* DRUG NAME */}
-              {insight.drugName && (
-                <View style={{ marginTop: 12, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Drug Name
-                  </Text>
-
-                  <Text>{insight.drugName}</Text>
-                </View>
-              )}
-
-              <Divider style={{ marginVertical: 8 }} />
-
-              {/* PRIORITY */}
-              {insight.priority && (
+                {/* HCP */}
                 <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Priority
+                    HCP Details
                   </Text>
 
                   <View style={{ flexDirection: 'column' }}>
-                    <Chip
-                      compact
-                      style={{
-                        backgroundColor: priority.container,
-                        borderRadius: 999,
-                      }}
-                      textStyle={{
-                        color: priority.text,
-                        fontWeight: '700',
-                        marginVertical: 2,
-                      }}
-                    >
-                      {insight.priority}
-                    </Chip>
+                    <Text style={{ textAlign: 'right' }}>
+                      {insight.hcp?.name}
+                    </Text>
+                    <Text style={{ textAlign: 'right', color: theme.colors.onSurfaceVariant }}>
+                      {insight.hcp?.specialty}
+                    </Text>
+                    <Text style={{ textAlign: 'right', color: theme.colors.onSurfaceVariant }}>
+                      {insight.hcp?.institution}
+                    </Text>
                   </View>
                 </View>
-              )}
 
-              {/* STAGE */}
-              {insight.stage && (
-                <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Stage
-                  </Text>
-
-                  <View style={{ flexDirection: 'column' }}>
-                    <Chip
-                      compact
-                      style={{
-                        height: 24,
-                        backgroundColor: '#607D8B',
-                        borderRadius: 999,
-                      }}
-                      textStyle={{
-                        color: '#FFFFFF',
-                        marginVertical: 2,
-                        fontSize: 11,
-                        fontWeight: '700',
-                      }}
-                    >
-                      {insight.stage}
-                    </Chip>
-                  </View>
-                </View>
-              )}
-
-              {/* CATEGORY */}
-              {insight.category && (
-                <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Category
-                  </Text>
-
-                  <View style={{ flexDirection: 'column' }}>
-                    <Chip
-                      compact
-                      style={{
-                        height: 24,
-                        backgroundColor: insight.category.color,
-                        borderRadius: 999,
-                      }}
-                      textStyle={{
-                        color: '#FFFFFF',
-                        marginVertical: 2,
-                        fontSize: 11,
-                        fontWeight: '700',
-                      }}
-                    >
-                      {insight.category.name}
-                    </Chip>
-                  </View>
-                </View>
-              )}
-
-              <Divider style={{ marginVertical: 8 }} />
-
-              {/* CREATED AT */}
-              {insight.createdAt && (
-                <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Created At
-                  </Text>
-
-                  <Text>{getRelativeTime(insight.createdAt)}</Text>
-                </View>
-              )}
-
-              {/* UPDATED AT */}
-              {insight.updatedAt && (
-                <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                    Updated At
-                  </Text>
-
-                  <Text>{getRelativeTime(insight.updatedAt)}</Text>
-                </View>
-              )}
-
-              {/* TAGS */}
-              {insight?.insightTagsCollection?.edges?.length > 0 && (
-                <>
-                  <Divider style={{ marginVertical: 8 }} />
-                  <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                {/* DRUG NAME */}
+                {insight.drugName && (
+                  <View style={{ marginTop: 12, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text variant="titleMedium" style={{ marginBottom: 4, }}>
-                      Tags
+                      Drug Name
                     </Text>
 
-                    <View style={{
-                      width: '50%',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 4,
-                      justifyContent: 'flex-end',
-                    }}>
-                      {insight?.insightTagsCollection?.edges?.map(tag => tag.node.tag).map(tag => (
-                        <Chip
-                          key={tag.id}
-                          compact
-                          style={{
-                            height: 24,
-                            backgroundColor: '#455A64',
-                            borderRadius: 999,
-                          }}
-                          textStyle={{
-                            color: '#FFFFFF',
-                            marginVertical: 2,
-                            fontSize: 11,
-                            fontWeight: '700',
-                          }}
-                        >
-                          {tag.name}
-                        </Chip>
-                      ))}
+                    <Text>{insight.drugName}</Text>
+                  </View>
+                )}
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                {/* PRIORITY */}
+                {insight.priority && (
+                  <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                      Priority
+                    </Text>
+
+                    <View style={{ flexDirection: 'column' }}>
+                      <Chip
+                        compact
+                        style={{
+                          backgroundColor: priority.container,
+                          borderRadius: 999,
+                        }}
+                        textStyle={{
+                          color: priority.text,
+                          fontWeight: '700',
+                          marginVertical: 2,
+                        }}
+                      >
+                        {insight.priority}
+                      </Chip>
                     </View>
                   </View>
-                </>
-              )}
+                )}
 
-              <Divider style={{ marginVertical: 8 }} />
+                {/* STAGE */}
+                {insight.stage && (
+                  <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                      Stage
+                    </Text>
 
-              {/* TIMELINE (mocked for now) */}
-              <Text variant="titleMedium">
-                Activity Timeline
-              </Text>
-              <View style={styles.activityContainer}>
-                <View style={[styles.row, styles.headerRow]}>
-                  <Text style={[styles.headerCell, styles.action]}>
-                    Action
-                  </Text>
-
-                  <Text style={styles.headerCell}>
-                    Field
-                  </Text>
-
-                  <Text style={styles.headerCell}>
-                    Old Value
-                  </Text>
-
-                  <Text style={styles.headerCell}>
-                    New Value
-                  </Text>
-
-                  <Text style={styles.headerCell}>
-                    Time
-                  </Text>
-                </View>
-                <FlatList
-                  data={activities}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderRow}
-                  ListEmptyComponent={
-                    <View style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      justifyContent: 'center',
-                    }}>
-                      <Text style={{ textAlign: 'center' }}>{loadingActivity ? 'Loading...' : 'No activity'}</Text>
+                    <View style={{ flexDirection: 'column' }}>
+                      <Chip
+                        compact
+                        style={{
+                          height: 24,
+                          backgroundColor: '#607D8B',
+                          borderRadius: 999,
+                        }}
+                        textStyle={{
+                          color: '#FFFFFF',
+                          marginVertical: 2,
+                          fontSize: 11,
+                          fontWeight: '700',
+                        }}
+                      >
+                        {insight.stage}
+                      </Chip>
                     </View>
-                  }
-                />
-              </View>
+                  </View>
+                )}
+
+                {/* CATEGORY */}
+                {insight.category && (
+                  <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                      Category
+                    </Text>
+
+                    <View style={{ flexDirection: 'column' }}>
+                      <Chip
+                        compact
+                        style={{
+                          height: 24,
+                          backgroundColor: insight.category.color,
+                          borderRadius: 999,
+                        }}
+                        textStyle={{
+                          color: '#FFFFFF',
+                          marginVertical: 2,
+                          fontSize: 11,
+                          fontWeight: '700',
+                        }}
+                      >
+                        {insight.category.name}
+                      </Chip>
+                    </View>
+                  </View>
+                )}
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                {/* CREATED AT */}
+                {insight.createdAt && (
+                  <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                      Created At
+                    </Text>
+
+                    <Text>{getRelativeTime(insight.createdAt)}</Text>
+                  </View>
+                )}
+
+                {/* UPDATED AT */}
+                {insight.updatedAt && (
+                  <View style={{ marginTop: 8, marginBottom: 4, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="titleMedium">
+                      Updated At
+                    </Text>
+
+                    <Text>{getRelativeTime(insight.updatedAt)}</Text>
+                  </View>
+                )}
+
+                {/* TAGS */}
+                {insight?.insightTagsCollection?.edges?.length > 0 && (
+                  <>
+                    <Divider style={{ marginVertical: 8 }} />
+                    <View style={{ marginTop: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                        Tags
+                      </Text>
+
+                      <View style={{
+                        width: '50%',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        gap: 4,
+                        justifyContent: 'flex-end',
+                      }}>
+                        {insight?.insightTagsCollection?.edges?.map(tag => tag.node.tag).map(tag => (
+                          <Chip
+                            key={tag.id}
+                            compact
+                            style={{
+                              height: 24,
+                              backgroundColor: '#455A64',
+                              borderRadius: 999,
+                            }}
+                            textStyle={{
+                              color: '#FFFFFF',
+                              marginVertical: 2,
+                              fontSize: 11,
+                              fontWeight: '700',
+                            }}
+                          >
+                            {tag.name}
+                          </Chip>
+                        ))}
+                      </View>
+                    </View>
+                  </>
+                )}
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                {/* ACTIVITY TIMELINE */}
+                <View style={{ marginBottom: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text variant="titleMedium">
+                    Activity Timeline
+                  </Text>
+                  <Text>{loadingActivity ? 'Loading' : activities.length === 0 ? 'No activity' : ''}</Text>
+                </View>
+                {activityError ? (
+                  <View style={{
+                    padding: 16,
+                    borderWidth: 1,
+                    borderColor: "#F44336",
+                    borderRadius: 4,
+                    backgroundColor: "rgba(244, 67, 54, 0.1)"
+                  }}>
+                    <Text>Encountered error while fetching activity list: {activityError?.message}</Text>
+                  </View>
+                ) : (
+                  activities.map((activity, i) => {
+                    const timelineWidth = 8;
+                    const timelineGap = 8;
+                    return (
+                      <React.Fragment key={activity.id}>
+                        <View style={{
+                          height: i > 0 ? 32 : 12,
+                          display: 'flex',
+                          flexDirection: 'row',
+                          gap: timelineGap,
+                        }}>
+                          <View style={{
+                            width: timelineWidth,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}>
+                            <View
+                              style={{
+                                flex: 1,
+                                width: 1,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
+                          </View>
+                        </View>
+                        <View style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          gap: timelineGap,
+                        }}>
+                          <View style={{
+                            width: timelineWidth,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}>
+                            <View
+                              style={{
+                                flex: 1,
+                                width: 1,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
+                            <View
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 999,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
+                            <View
+                              style={{
+                                flex: 1,
+                                width: 1,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
+                          </View>
+                          <View>
+                            <Text>{activity.user.fullName}</Text>
+                          </View>
+                        </View>
+                        <View style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          gap: timelineGap,
+                        }}>
+                          <View style={{
+                            width: timelineWidth,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}>
+                            <View
+                              style={{
+                                flex: 1,
+                                width: 1,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
+                          </View>
+                          <View style={{
+                            flex: 1,
+                            flexDirection: 'column',
+                            gap: 8,
+                          }}>
+                            <Text variant='bodySmall' style={{ color: 'gray' }}>{getRelativeTime(activity.createdAt)}</Text>
+                            <View style={{ display: 'flex', flexDirection: 'column' }}>
+                              <View style={styles.activityContainer}>
+                                <View style={[styles.row, styles.headerRow]}>
+                                  <Text style={styles.headerCell}>
+                                    Field Name
+                                  </Text>
+
+                                  <Text style={styles.headerCell}>
+                                    Old Value
+                                  </Text>
+
+                                  <Text style={styles.headerCell}>
+                                    New Value
+                                  </Text>
+                                </View>
+                                <View style={styles.row}>
+                                  <Text style={styles.cell}>
+                                    {activity.fieldName || "-"}
+                                  </Text>
+
+                                  <Text style={styles.cell}>
+                                    {`"${activity.oldValue}"` || "-"}
+                                  </Text>
+
+                                  <Text style={styles.cell}>
+                                    {`"${activity.newValue}"` || "-"}
+                                  </Text>
+                                </View>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      </React.Fragment>
+                    )
+                  })
+                )}
+              </ScrollView>
 
               {/* ACTIONS */}
               <View style={{ marginTop: 48, gap: 10, flexDirection: 'row' }}>
