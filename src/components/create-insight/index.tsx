@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { TagResponseType } from '../../type/tagType';
 import { CategoriesResponseType } from '../../type/categoriesType';
-import { InsightType } from '../../type/InsightType';
+import { CreateInsightResponseType, InsightType, UpdateInsightResponseType } from '../../type/InsightType';
 import { HCPResponseType } from '../../type/HCPType';
 
 import stages from '../../constants/stages';
@@ -53,10 +54,112 @@ export default function CreateInsightForm({
   editFlow: boolean;
   insight: InsightType;
 }) {
-  const mutation = editFlow
-    ? UPDATE_INSIGHT
-    : CREATE_INSIGHT;
-  const [createOrUpdateInsight, { loading }] = useMutation(mutation);
+  const [createInsight, { loading: creating }] = useMutation<CreateInsightResponseType>(CREATE_INSIGHT, {
+    update(cache, { data }) {
+      const newInsight = data?.insertIntoInsightsCollection?.records?.[0];
+
+      if (!newInsight) return;
+
+      cache.modify({
+        fields: {
+          insightsCollection(existingConnection = {}) {
+            const newInsightRef = cache.writeFragment({
+              data: newInsight,
+              fragment: gql`
+              fragment NewInsight on Insights {
+                nodeId
+                id
+                title
+                description
+                stage
+                priority
+                columnOrder
+                drugName
+                customFields
+                createdAt
+                updatedAt
+              }
+            `,
+            });
+
+            return {
+              ...existingConnection,
+
+              edges: [
+                {
+                  __typename: 'InsightsEdge',
+                  node: newInsightRef,
+                },
+
+                ...(existingConnection.edges || []),
+              ],
+            };
+          },
+        },
+      });
+    },
+  });
+  const [updateInsight, { loading: updating }] = useMutation<UpdateInsightResponseType>(UPDATE_INSIGHT, {
+    update(cache, { data }) {
+      const updatedInsight =
+        data?.updateInsightsCollection?.records?.[0];
+
+      if (!updatedInsight) return;
+
+      cache.writeFragment({
+        id: cache.identify({
+          __typename: 'Insights',
+          id: updatedInsight.id,
+        }),
+
+        fragment: gql`
+          fragment UpdatedInsight on Insights {
+            title
+            description
+            stage
+            priority
+            columnOrder
+            drugName
+            customFields
+            createdAt
+            updatedAt
+
+            hcp {
+              nodeId
+              id
+              name
+              specialty
+              institution
+            }
+
+            category {
+              nodeId
+              id
+              name
+              color
+            }
+
+            insightTagsCollection {
+              edges {
+                node {
+                  tag {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        `,
+
+        data: {
+          __typename: 'Insights',
+          ...updatedInsight,
+        },
+      });
+    },
+  });
+  const loading = creating || updating;
 
   const [showHCPDropDown, setShowHCPDropDown] =
     useState(false);
@@ -104,21 +207,21 @@ export default function CreateInsightForm({
   }, [insight]);
 
   const { data: tagsData, loading: loadingTags, error: tagsError } = useQuery<TagResponseType>(LIST_TAGS, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   });
   const tags = tagsData?.tagsCollection?.edges?.map(
     edge => edge.node
   ) ?? [];
 
   const { data: categoriesData, loading: loadingCategories, error: categoriesError } = useQuery<CategoriesResponseType>(LIST_CATEGORIES, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   });
   const categories = categoriesData?.categoriesCollection?.edges?.map(
     edge => edge.node
   ) ?? [];
 
   const { data: HCPData, loading: loadingHCPs, error: HCPError } = useQuery<HCPResponseType>(LIST_HCPS, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   });
   const HCPs = HCPData?.hcpsCollection?.edges?.map(
     edge => edge.node
@@ -175,7 +278,7 @@ export default function CreateInsightForm({
         payload['hcpId'] = values.linkedHCP;
         payload['categoryId'] = values.category;
 
-        await createOrUpdateInsight({
+        await updateInsight({
           variables: {
             filter: {
               id: {
@@ -187,7 +290,7 @@ export default function CreateInsightForm({
         });
       } else {
         payload['createdBy'] = userId;
-        await createOrUpdateInsight({
+        await createInsight({
           variables: {
             input: [
               payload,
@@ -207,7 +310,6 @@ export default function CreateInsightForm({
         tags: [],
       });
       setVisible(false);
-      onSuccess();
     } catch (err) {
       console.log(err);
     }

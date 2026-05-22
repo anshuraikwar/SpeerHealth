@@ -214,12 +214,12 @@ export default function InsightsList() {
       </Pressable>
 
       {createInsightFormVisible && (
-      <CreateInsightForm
-        visible={createInsightFormVisible}
-        setVisible={setCreateInsightFormVisible}
-        editFlow={editInsightFlow}
-        insight={insightToEdit}
-      />
+        <CreateInsightForm
+          visible={createInsightFormVisible}
+          setVisible={setCreateInsightFormVisible}
+          editFlow={editInsightFlow}
+          insight={insightToEdit}
+        />
       )}
 
       {detailSheetVisible && (

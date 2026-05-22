@@ -8,9 +8,14 @@ export const CREATE_INSIGHT = gql`
         nodeId
         id
         title
+        description
         stage
         priority
+        columnOrder
+        drugName
+        customFields
         createdAt
+        updatedAt
       }
     }
   }

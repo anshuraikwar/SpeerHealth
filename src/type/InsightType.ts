@@ -1,3 +1,13 @@
+export type CreateInsightResponseType = {
+  insertIntoInsightsCollection: {
+    records: InsightType[];
+  }
+}
+export type UpdateInsightResponseType = {
+  updateInsightsCollection: {
+    records: InsightType[];
+  }
+}
 export type InsightResponseType = {
   insightsCollection: {
     edges: InsightNodeType[];

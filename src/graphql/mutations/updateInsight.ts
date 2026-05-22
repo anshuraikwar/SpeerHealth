@@ -15,10 +15,40 @@ export const UPDATE_INSIGHT = gql`
         nodeId
         id
         title
+        description
         stage
         priority
         columnOrder
+        drugName
+        customFields
+        createdAt
         updatedAt
+
+        hcp {
+          nodeId
+          id
+          name
+          specialty
+          institution
+        }
+
+        category {
+          nodeId
+          id
+          name
+          color
+        }
+
+        insightTagsCollection {
+          edges {
+            node {
+              tag {
+                id
+                name
+              }
+            }
+          }
+        }
       }
     }
   }

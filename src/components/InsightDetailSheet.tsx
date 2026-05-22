@@ -47,7 +47,7 @@ export default function InsightDetailSheet({
     variables: {
       insightId: insight?.id,
     },
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   });
   const activities = data?.insightActivitiesCollection?.edges.map(item => item.node) ?? [];
   const renderRow = ({ item }: { item: Activity }) => (
