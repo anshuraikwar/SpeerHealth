@@ -1,8 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Chip, TextInput, Text } from 'react-native-paper';
-
-const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
+import { PRIORITIES } from '../../constants/priorities';
 
 export default function FilterBar({
   search,

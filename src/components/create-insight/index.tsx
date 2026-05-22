@@ -10,8 +10,10 @@ import { InsightType } from '../../type/InsightType';
 import { HCPResponseType } from '../../type/HCPType';
 
 import stages from '../../constants/stages';
+import { PRIORITIES } from '../../constants/priorities';
 
 import { useMutation } from '@apollo/client/react';
+import { supabase } from '../../lib/supabase';
 
 import {
   insightSchema,
@@ -39,22 +41,17 @@ import {
   Text,
   TextInput,
 } from 'react-native-paper';
-import { supabase } from '../../lib/supabase';
-
-const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 
 export default function CreateInsightForm({
   visible,
   setVisible,
   editFlow,
   insight,
-  onSuccess,
 }: {
   visible: boolean;
   setVisible: React.Dispatch<React.SetStateAction<boolean>>;
   editFlow: boolean;
   insight: InsightType;
-  onSuccess: () => void;
 }) {
   const mutation = editFlow
     ? UPDATE_INSIGHT
@@ -182,7 +179,7 @@ export default function CreateInsightForm({
           variables: {
             filter: {
               id: {
-                eq: insight.id,
+                eq: insight?.id,
               },
             },
             set: payload,
@@ -235,7 +232,7 @@ export default function CreateInsightForm({
 
               <Text variant="headlineSmall">
                 {editFlow ? 'Edit' : 'Create'} Insight
-                {editFlow ? ` "${insight.title}"` : ''}
+                {editFlow && insight?.title ? ` "${insight?.title}"` : ''}
               </Text>
 
               <ScrollView

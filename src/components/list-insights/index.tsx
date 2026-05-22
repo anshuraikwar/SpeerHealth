@@ -47,13 +47,15 @@ export default function InsightsList() {
     }
   }, [detailSheetVisible]);
 
-  const [editInsightFlow, setEditInsightFlow] =
-    React.useState(false);
-
+  const [editInsightFlow, setEditInsightFlow] = React.useState(false);
   const [createInsightFormVisible, setCreateInsightFormVisible] = React.useState(false);
-  const [insightToEdit, setInsightToEdit] =
-    React.useState<any>(null);
-  React.useState<any>(null);
+  const [insightToEdit, setInsightToEdit] = React.useState<any>(null);
+  useEffect(() => {
+    if (!createInsightFormVisible) {
+      setInsightToEdit(null);
+      setEditInsightFlow(false);
+    }
+  }, [createInsightFormVisible]);
 
   const [analyticsSheetVisible, setAnalyticsSheetVisible] =
     React.useState(false);
@@ -204,13 +206,14 @@ export default function InsightsList() {
         <Ionicons name="add" size={32} color="white" />
       </Pressable>
 
+      {createInsightFormVisible && (
       <CreateInsightForm
         visible={createInsightFormVisible}
         setVisible={setCreateInsightFormVisible}
         editFlow={editInsightFlow}
         insight={insightToEdit}
-        onSuccess={() => { refetchInsightsList(); }}
       />
+      )}
 
       {detailSheetVisible && (
         <InsightDetailSheet
