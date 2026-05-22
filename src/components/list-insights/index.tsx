@@ -17,6 +17,7 @@ import {
   FlatList,
   Pressable,
   View,
+  RefreshControl,
 } from 'react-native';
 import {
   Text,
@@ -89,7 +90,7 @@ export default function InsightsList() {
     variables: {
       filter,
     },
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   });
   const insights: InsightNodeType[] = data?.insightsCollection?.edges ?? [];
   const segregatedInsights: Record<string, InsightNodeType[]> = useMemo(() => {
@@ -179,6 +180,12 @@ export default function InsightsList() {
           }}>
             <Text style={{ textAlign: 'center' }}>{loading ? 'Loading...' : 'No insights'}</Text>
           </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => { refetchInsightsList() }}
+          />
         }
       />
 
