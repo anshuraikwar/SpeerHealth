@@ -1,3 +1,13 @@
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+
+import { priorityColors } from '../../styles/styles';
+
+import { InsightType } from '../../type/InsightType';
+
+import stages from '../../constants/stages';
+
+import { getRelativeTime } from '../../utils/time-utils';
+
 import {
   View,
 } from 'react-native';
@@ -7,25 +17,15 @@ import {
   Text,
   useTheme,
 } from 'react-native-paper';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
-
-import stages from '../../constants/stages';
-
-import { useMutation } from '@apollo/client/react';
-
-import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
-import { getRelativeTime } from '../../utils/time-utils';
-import { priorityColors } from '../../styles/styles';
 
 export default function InsightCard({
   insight,
+  updateStage,
 }: {
   insight: any;
+  updateStage: (insight: InsightType, nextStage: string) => Promise<void>;
 }) {
   const theme = useTheme();
-  const [updateInsight] = useMutation(
-    UPDATE_INSIGHT
-  );
 
   const priority =
     priorityColors[insight.priority] ??
@@ -38,7 +38,7 @@ export default function InsightCard({
   const canMoveForward =
     currentIndex < stages.length - 1;
 
-  const updateStage = async (
+  const handleUpdateStage = async (
     direction: 'forward' | 'backward'
   ) => {
     try {
@@ -64,32 +64,7 @@ export default function InsightCard({
         return;
       }
 
-      await updateInsight({
-        variables: {
-          filter: {
-            id: {
-              eq: insight.id,
-            },
-          },
-          set: {
-            stage: nextStage,
-          },
-        },
-
-        optimisticResponse: {
-          updateInsightsCollection: {
-            __typename: 'InsightsUpdateResponse',
-            affectedCount: 1,
-            records: [
-              {
-                __typename: 'Insights',
-                ...insight,
-                stage: nextStage,
-              },
-            ],
-          },
-        },
-      })
+      await updateStage(insight, nextStage);
     } catch (error) {
       console.log(
         'Error while updating stage:',
@@ -107,11 +82,11 @@ export default function InsightCard({
       overshootRight={false}
       onSwipeableOpen={(direction) => {
         if (direction === 'right' && canMoveBackward) {
-          updateStage('backward');
+          handleUpdateStage('backward');
         }
 
         if (direction === 'left' && canMoveForward) {
-          updateStage('forward');
+          handleUpdateStage('forward');
         }
       }
       }

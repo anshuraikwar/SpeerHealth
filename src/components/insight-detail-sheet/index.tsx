@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { priorityColors } from '../styles/styles';
-import { InsightType } from '../type/InsightType';
-import { getRelativeTime } from '../utils/time-utils';
+import { priorityColors } from '../../styles/styles';
+import { InsightType } from '../../type/InsightType';
+import { getRelativeTime } from '../../utils/time-utils';
 import {
   Pressable,
   View,
@@ -20,19 +20,20 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { useQuery } from '@apollo/client/react';
-import { LIST_INSIGHT_ACTIVITY } from '../graphql/queries/listInsightActivity';
-import { Activity, ActivityResponseType } from '../type/ActivityType';
+import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
+import { Activity, ActivityResponseType } from '../../type/ActivityType';
+import { styles } from './styles';
 
 
 export default function InsightDetailSheet({
-  sheetVisible,
-  setSheetVisible,
+  visible,
+  setVisible,
   insight,
   onEdit,
   onMoveStage,
 }: {
-  sheetVisible: boolean;
-  setSheetVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  visible: boolean;
+  setVisible: React.Dispatch<React.SetStateAction<boolean>>;
   insight: InsightType;
   onEdit: () => void;
   onMoveStage: () => void;
@@ -82,17 +83,17 @@ export default function InsightDetailSheet({
   return (
     <Portal>
       <Modal
-        visible={sheetVisible}
+        visible={visible}
         transparent
         animationType="slide"
         statusBarTranslucent
         onRequestClose={() => {
-          setSheetVisible(false);
+          setVisible(false);
         }}
       >
         <Pressable
           style={styles.backdrop}
-          onPress={() => setSheetVisible(false)}
+          onPress={() => setVisible(false)}
         >
           <Pressable style={styles.sheetWrapper}>
             <Surface id="sheet" style={styles.sheet} elevation={1}>
@@ -357,68 +358,3 @@ export default function InsightDetailSheet({
     </Portal>
   )
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.50)',
-  },
-
-  sheetWrapper: {
-    width: '100%',
-  },
-
-  sheet: {
-    backgroundColor: '#1e1e1e',
-    padding: 24,
-    paddingTop: 8,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    minHeight: 300,
-  },
-
-  handle: {
-    width: 120,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#C4C7C5',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-
-  activityContainer: {
-    marginTop: 8,
-    borderWidth: 0.5,
-    borderColor: "rgb(73,69,79)",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-
-  headerRow: {
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-
-  row: {
-    flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-
-  headerCell: {
-    flex: 1,
-    fontWeight: "700",
-    fontSize: 12,
-    textAlign: "center",
-  },
-
-  cell: {
-    flex: 1,
-    fontSize: 12,
-    textAlign: "center",
-  },
-
-  action: {
-    flex: 0.8,
-  },
-});

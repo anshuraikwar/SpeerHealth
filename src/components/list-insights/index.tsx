@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 
-import { InsightNodeType, InsightResponseType } from '../../type/InsightType';
+import { InsightNodeType, InsightResponseType, InsightType } from '../../type/InsightType';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -12,6 +12,7 @@ import { capitalize } from '../../utils/string-utils';
 import { useDebounce } from '../../hooks/useDebounce';
 
 import { LIST_INSIGHTS } from '../../graphql/queries/listInsights';
+import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
 
 import {
   FlatList,
@@ -27,9 +28,10 @@ import {
 } from 'react-native-paper';
 import InsightCard from './InsightCard';
 import FilterBar from './FilterBar';
-import InsightDetailSheet from '../InsightDetailSheet';
+import InsightDetailSheet from '../insight-detail-sheet';
 import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../Analytics';
+import StageSelector from '../stage-selector/stageSelector';
 
 export default function InsightsList() {
   const [selectedStage, setSelectedStage] = React.useState(stages[0]);
@@ -37,10 +39,8 @@ export default function InsightsList() {
   const [search, setSearch] = React.useState('');
   const [selectedPriorities, setSelectedPriorities] = React.useState<string[]>([]);
 
-  const [selectedInsight, setSelectedInsight] =
-    React.useState<any>(null);
-  const [detailSheetVisible, setDetailSheetVisible] =
-    React.useState(false);
+  const [selectedInsight, setSelectedInsight] = React.useState<any>(null);
+  const [detailSheetVisible, setDetailSheetVisible] = React.useState(false);
 
   useEffect(() => {
     if (!detailSheetVisible) {
@@ -51,6 +51,7 @@ export default function InsightsList() {
   const [editInsightFlow, setEditInsightFlow] = React.useState(false);
   const [createInsightFormVisible, setCreateInsightFormVisible] = React.useState(false);
   const [insightToEdit, setInsightToEdit] = React.useState<any>(null);
+
   useEffect(() => {
     if (!createInsightFormVisible) {
       setInsightToEdit(null);
@@ -58,11 +59,11 @@ export default function InsightsList() {
     }
   }, [createInsightFormVisible]);
 
-  const [analyticsSheetVisible, setAnalyticsSheetVisible] =
-    React.useState(false);
+  const [stageSelectorVisible, setStageSelectorVisible] = React.useState(false);
+
+  const [analyticsSheetVisible, setAnalyticsSheetVisible] = React.useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
-
   const filter = React.useMemo(() => {
     const conditions: any[] = [];
 
@@ -102,7 +103,49 @@ export default function InsightsList() {
       }
     });
     return segregated;
-  }, [insights])
+  }, [insights]);
+
+  const [updateInsight] = useMutation(
+    UPDATE_INSIGHT
+  );
+  const updateStage = async (
+    insight: InsightType,
+    nextStage: string,
+  ) => {
+    try {
+      await updateInsight({
+        variables: {
+          filter: {
+            id: {
+              eq: insight.id,
+            },
+          },
+          set: {
+            stage: nextStage,
+          },
+        },
+
+        optimisticResponse: {
+          updateInsightsCollection: {
+            __typename: 'InsightsUpdateResponse',
+            affectedCount: 1,
+            records: [
+              {
+                __typename: 'Insights',
+                ...insight,
+                stage: nextStage,
+              },
+            ],
+          },
+        },
+      })
+    } catch (error) {
+      console.log(
+        'Error while updating stage:',
+        JSON.stringify(error, null, 2)
+      );
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -139,6 +182,7 @@ export default function InsightsList() {
       {loading && (
         <ActivityIndicator />
       )}
+
       {error && (
         <View style={{
           padding: 16,
@@ -166,7 +210,7 @@ export default function InsightsList() {
                   setDetailSheetVisible(true);
                 }}
               >
-                <InsightCard insight={insight} />
+                <InsightCard insight={insight} updateStage={updateStage} />
               </Pressable>
               <Divider />
             </>
@@ -212,7 +256,6 @@ export default function InsightsList() {
       >
         <Ionicons name="add" size={32} color="white" />
       </Pressable>
-
       {createInsightFormVisible && (
         <CreateInsightForm
           visible={createInsightFormVisible}
@@ -221,22 +264,6 @@ export default function InsightsList() {
           insight={insightToEdit}
         />
       )}
-
-      {detailSheetVisible && (
-        <InsightDetailSheet
-          sheetVisible={detailSheetVisible}
-          setSheetVisible={setDetailSheetVisible}
-          insight={selectedInsight}
-          onEdit={() => {
-            setInsightToEdit(selectedInsight);
-            setDetailSheetVisible(false);
-            setEditInsightFlow(true);
-            setCreateInsightFormVisible(true);
-          }}
-          onMoveStage={() => console.log('onMoveStage')}
-        />
-      )}
-
 
       <Pressable
         onPress={() => {
@@ -261,7 +288,6 @@ export default function InsightsList() {
       >
         <Ionicons name="bar-chart" size={32} color="white" />
       </Pressable>
-
       {analyticsSheetVisible && (
         <AnalyticsBottomSheet
           visible={analyticsSheetVisible}
@@ -269,6 +295,36 @@ export default function InsightsList() {
           totalInsights={insights.length}
           insights={insights}
           segregatedInsights={segregatedInsights}
+        />
+      )}
+
+      {detailSheetVisible && (
+        <InsightDetailSheet
+          visible={detailSheetVisible}
+          setVisible={setDetailSheetVisible}
+          insight={selectedInsight}
+          onEdit={() => {
+            setInsightToEdit(selectedInsight);
+            setDetailSheetVisible(false);
+            setEditInsightFlow(true);
+            setCreateInsightFormVisible(true);
+          }}
+          onMoveStage={() => {
+            console.log('move stage')
+            setInsightToEdit(selectedInsight);
+            setDetailSheetVisible(false);
+            setEditInsightFlow(true);
+            setStageSelectorVisible(true);
+          }}
+        />
+      )}
+      
+      {stageSelectorVisible && (
+        <StageSelector
+          visible={stageSelectorVisible}
+          setVisible={setStageSelectorVisible}
+          insight={insightToEdit}
+          updateStage={updateStage}
         />
       )}
     </View>
