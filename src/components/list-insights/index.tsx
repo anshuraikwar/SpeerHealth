@@ -197,6 +197,9 @@ export default function InsightsList() {
 
       <FlatList
         style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: 100
+        }}
         data={segregatedInsights[selectedStage]}
         keyExtractor={(item) => item.node.nodeId}
         renderItem={({ item }) => {
@@ -318,7 +321,7 @@ export default function InsightsList() {
           }}
         />
       )}
-      
+
       {stageSelectorVisible && (
         <StageSelector
           visible={stageSelectorVisible}
