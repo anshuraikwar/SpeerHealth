@@ -5,6 +5,8 @@ import { gql } from '@apollo/client';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { styles } from './styles';
+
 import { TagResponseType } from '../../type/tagType';
 import { CategoriesResponseType } from '../../type/categoriesType';
 import { CreateInsightResponseType, InsightType, UpdateInsightResponseType } from '../../type/InsightType';
@@ -30,7 +32,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   View,
   Alert,
 } from 'react-native';
@@ -42,6 +43,7 @@ import {
   Text,
   TextInput,
 } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
 
 export default function CreateInsightForm({
   visible,
@@ -288,6 +290,13 @@ export default function CreateInsightForm({
             set: payload,
           },
         });
+
+        Toast.show({
+          type: 'success',
+          text1: 'Insight created',
+          text2: `Your insight was successfully created`,
+          position: 'bottom',
+        });
       } else {
         payload['createdBy'] = userId;
         await createInsight({
@@ -296,6 +305,12 @@ export default function CreateInsightForm({
               payload,
             ],
           },
+        });
+        Toast.show({
+          type: 'success',
+          text1: 'Insight saved',
+          text2: `Your updated insight was successfully saved`,
+          position: 'bottom',
         });
       }
 
@@ -310,8 +325,13 @@ export default function CreateInsightForm({
         tags: [],
       });
       setVisible(false);
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: JSON.stringify(error, null, 2),
+        position: 'bottom',
+      });
     }
   };
 

@@ -32,6 +32,7 @@ import InsightDetailSheet from '../insight-detail-sheet';
 import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../Analytics';
 import StageSelector from '../stage-selector/stageSelector';
+import Toast from 'react-native-toast-message';
 
 export default function InsightsList() {
   const [selectedStage, setSelectedStage] = React.useState(stages[0]);
@@ -138,12 +139,20 @@ export default function InsightsList() {
             ],
           },
         },
-      })
+      });
+      Toast.show({
+        type: 'success',
+        text1: 'Insight moved',
+        text2: `Your insight was moved to ${nextStage}`,
+        position: 'bottom',
+      });
     } catch (error) {
-      console.log(
-        'Error while updating stage:',
-        JSON.stringify(error, null, 2)
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: JSON.stringify(error, null, 2),
+        position: 'bottom',
+      });
     }
   };
 

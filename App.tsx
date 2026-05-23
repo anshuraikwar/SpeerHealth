@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import { ApolloProvider } from '@apollo/client/react';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 
 import { appStyles } from './src/styles/styles';
 
@@ -66,6 +67,57 @@ export default function App() {
       }
     })
   }, [])
+  const toastConfig = {
+    success: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftWidth: 0,
+          borderWidth: 1,
+          borderColor: '#4CAF50',
+          borderRadius: 4,
+          backgroundColor: '#4CAF50',
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+        }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#fff',
+        }}
+        text2Style={{
+          fontSize: 12,
+          color: '#e5e5e5',
+        }}
+      />
+    ),
+
+    error: (props: any) => (
+      <ErrorToast
+        {...props}
+        style={{
+          borderLeftWidth: 0,
+          borderWidth: 1,
+          borderColor: '#F44336',
+          borderRadius: 4,
+          backgroundColor: '#F44336',
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+        }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#fff',
+        }}
+        text2Style={{
+          fontSize: 12,
+          color: '#e5e5e5',
+        }}
+      />
+    ),
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -75,6 +127,10 @@ export default function App() {
             <View style={styles.container}>
               {userId ? <ListInsights /> : <Auth />}
             </View>
+
+            <Toast
+              config={toastConfig}
+            />
           </ApolloProvider>
         </PaperProvider>
       </SafeAreaProvider>
