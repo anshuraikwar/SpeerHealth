@@ -30,7 +30,7 @@ import InsightCard from './InsightCard';
 import FilterBar from './FilterBar';
 import InsightDetailSheet from '../insight-detail-sheet';
 import CreateInsightForm from '../create-insight';
-import AnalyticsBottomSheet from '../Analytics';
+import AnalyticsBottomSheet from '../analytics';
 import StageSelector from '../stage-selector/stageSelector';
 import Toast from 'react-native-toast-message';
 

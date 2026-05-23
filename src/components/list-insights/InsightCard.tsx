@@ -112,7 +112,7 @@ export default function InsightCard({
       renderRightActions={canMoveBackward ? () => (
         <View
           style={{
-            backgroundColor: '#F44336',
+            backgroundColor: '#EA580C',
             justifyContent: 'center',
             alignItems: 'flex-end',
             paddingHorizontal: 24,
