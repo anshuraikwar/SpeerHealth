@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 
 import { styles } from './styles';
-import { priorityColors } from '../../styles/styles';
 
 import { InsightType } from '../../type/InsightType';
-import { Activity, ActivityResponseType } from '../../type/ActivityType';
-
-import { getRelativeTime } from '../../utils/time-utils';
-
-import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
-import { useQuery } from '@apollo/client/react';
 
 import {
   Pressable,

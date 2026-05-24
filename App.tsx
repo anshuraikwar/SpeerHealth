@@ -117,6 +117,32 @@ export default function App() {
         }}
       />
     ),
+
+    info: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftWidth: 0,
+          borderWidth: 1,
+          borderColor: '#3b82f6',
+          borderRadius: 4,
+          backgroundColor: '#3b82f6',
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+        }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#fff',
+        }}
+        text2Style={{
+          fontSize: 12,
+          color: '#e5e5e5',
+        }}
+        text1NumberOfLines={0}
+      />
+    ),
   };
 
   return (

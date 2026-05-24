@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client';
 
 export const LIST_INSIGHTS = gql`
-  query ListInsights($cursor: Cursor, $filter: InsightsFilter) {
+  query ListInsights($cursor: Cursor, $first: Int = 20, $filter: InsightsFilter) {
     insightsCollection(
-      first: 20
+      first: $first
       after: $cursor
       filter: $filter
       orderBy: [{ columnOrder: AscNullsLast }]

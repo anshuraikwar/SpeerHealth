@@ -13,8 +13,22 @@ export type Activity = {
   oldValue?: string | null;
   newValue?: string | null;
   createdAt: string;
-  user :{
-    id:string;
-    fullName:string;
+  user: {
+    id: string;
+    fullName: string;
   }
+  insight: {
+    id: string;
+    title: string;
+  }
+};
+export type ActivitySubscriptionType = {
+  id: string;
+  action: string;
+  field_name?: string | null;
+  old_value?: string | null;
+  new_value?: string | null;
+  created_at: string;
+  user_id:string;
+  insight_id: string;
 };

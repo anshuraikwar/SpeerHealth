@@ -66,6 +66,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     textAlign: "center",
+    paddingHorizontal: 8,
   },
 
   action: {

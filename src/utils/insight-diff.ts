@@ -1,10 +1,12 @@
 import { InsightType } from "../type/InsightType";
 
-type Difference<T> = {
-  field: keyof T;
-  oldValue: T[keyof T];
-  newValue: T[keyof T];
-};
+export type Difference<T> = {
+  [K in keyof T]: {
+    field: K;
+    oldValue: T[K];
+    newValue: T[K];
+  };
+}[keyof T];
 
 type CompareOptions<T> = {
   ignoreFields?: (keyof T)[];

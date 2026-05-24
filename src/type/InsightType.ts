@@ -8,7 +8,7 @@ export type UpdateInsightResponseType = {
     records: InsightType[];
   }
 }
-export type InsightResponseType = {
+export type ListInsightResponseType = {
   insightsCollection: {
     edges: InsightNodeType[];
   }

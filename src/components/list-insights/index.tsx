@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 
-import { InsightNodeType, InsightResponseType, InsightType } from '../../type/InsightType';
+import { InsightNodeType, ListInsightResponseType, InsightType } from '../../type/InsightType';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -37,15 +37,29 @@ import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../analytics';
 import StageSelector from '../stage-selector/stageSelector';
 import Toast from 'react-native-toast-message';
+import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
+import { Activity, ActivityNodeType, ActivityResponseType, ActivitySubscriptionType } from '../../type/ActivityType';
+import { getChangedFields } from '../../utils/insight-diff';
 
 export default function InsightsList() {
-  const [selectedStage, setSelectedStage] = React.useState(stages[0]);
+  const client = useApolloClient();
 
-  const [search, setSearch] = React.useState('');
-  const [selectedPriorities, setSelectedPriorities] = React.useState<string[]>([]);
+  const [selectedStage, setSelectedStage] = useState(stages[0]);
+  const selectedStageRef = useRef(selectedStage);
+  useEffect(() => {
+    selectedStageRef.current = selectedStage;
+  }, [selectedStage]);
 
-  const [selectedInsight, setSelectedInsight] = React.useState<any>(null);
-  const [detailSheetVisible, setDetailSheetVisible] = React.useState(false);
+  const [search, setSearch] = useState('');
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+
+  const [selectedInsight, setSelectedInsight] = useState<any>(null);
+  const selectedInsightRef = useRef<InsightType>(null);
+  useEffect(() => {
+    selectedInsightRef.current = selectedInsight;
+  }, [selectedInsight]);
+  const [selectedInsightUpdates, setSelectedInsightUpdates] = useState<Record<string, Partial<InsightType>>>({});
+  const [detailSheetVisible, setDetailSheetVisible] = useState(false);
 
   useEffect(() => {
     if (!detailSheetVisible) {
@@ -53,9 +67,9 @@ export default function InsightsList() {
     }
   }, [detailSheetVisible]);
 
-  const [editInsightFlow, setEditInsightFlow] = React.useState(false);
-  const [createInsightFormVisible, setCreateInsightFormVisible] = React.useState(false);
-  const [insightToEdit, setInsightToEdit] = React.useState<any>(null);
+  const [editInsightFlow, setEditInsightFlow] = useState(false);
+  const [createInsightFormVisible, setCreateInsightFormVisible] = useState(false);
+  const [insightToEdit, setInsightToEdit] = useState<any>(null);
 
   useEffect(() => {
     if (!createInsightFormVisible) {
@@ -64,9 +78,9 @@ export default function InsightsList() {
     }
   }, [createInsightFormVisible]);
 
-  const [stageSelectorVisible, setStageSelectorVisible] = React.useState(false);
+  const [stageSelectorVisible, setStageSelectorVisible] = useState(false);
 
-  const [analyticsSheetVisible, setAnalyticsSheetVisible] = React.useState(false);
+  const [analyticsSheetVisible, setAnalyticsSheetVisible] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
   const filter = React.useMemo(() => {
@@ -92,7 +106,7 @@ export default function InsightsList() {
     return conditions.length > 0 ? { and: conditions } : {};
   }, [debouncedSearch, selectedPriorities]);
 
-  const { data, loading, error, refetch: refetchInsightsList } = useQuery<InsightResponseType>(LIST_INSIGHTS, {
+  const { data, loading, error, refetch: refetchInsightsList } = useQuery<ListInsightResponseType>(LIST_INSIGHTS, {
     variables: {
       filter,
     },
@@ -188,6 +202,327 @@ export default function InsightsList() {
       });
     }
   };
+
+  const getInsight = async (insightId: string) => {
+    try {
+      const { data } = await client.query<ListInsightResponseType>({
+        query: LIST_INSIGHTS,
+        variables: {
+          first: 1,
+          filter: {
+            id: {
+              eq: insightId,
+            },
+          },
+        },
+        fetchPolicy: 'network-only',
+      });
+
+      const insight = data?.insightsCollection?.edges?.[0]?.node;
+      return insight;
+    } catch (error) {
+      console.error(
+        `Encountered error while fetching insight "${insightId}" : \n`, JSON.stringify(error, null, 2),
+      )
+    }
+  }
+  const updateListInsightCache = async ({
+    insight,
+    insightId,
+    newStage,
+  }: {
+    insight?: InsightType,
+    insightId?: string;
+    newStage?: string;
+  }) => {
+    const completeInsight = selectedInsightRef.current && selectedInsightRef.current?.id === insightId && newStage
+      ? { ...selectedInsightRef.current, stage: newStage }
+      : insight
+        ? insight
+        : insightId
+          ? await getInsight(insightId)
+          : null;
+    if (!completeInsight) return;
+
+    client.cache.updateQuery<ListInsightResponseType>(
+      {
+        query: LIST_INSIGHTS,
+        variables: {
+          filter: {},
+          first: 20,
+        },
+      },
+      (existingData) => {
+        if (!existingData) return existingData;
+
+        const alreadyExists =
+          existingData.insightsCollection.edges.some(
+            (edge) => edge.node.id === completeInsight.id
+          );
+        if (alreadyExists) {
+          return {
+            ...existingData,
+            insightsCollection: {
+              ...existingData.insightsCollection,
+
+              edges:
+                existingData.insightsCollection.edges.map(
+                  (edge) => {
+                    // update matching insight
+                    if (edge.node.id === completeInsight.id) {
+                      const updatedNode: InsightType = { ...edge.node, ...completeInsight };
+                      return {
+                        ...edge,
+                        node: updatedNode,
+                      };
+                    }
+
+                    return edge;
+                  }
+                ),
+            },
+          };
+        }
+
+        return {
+          ...existingData,
+          insightsCollection: {
+            ...existingData.insightsCollection,
+            edges: [
+              {
+                node: completeInsight,
+              },
+
+              ...existingData.insightsCollection.edges,
+            ],
+          },
+        };
+      }
+    );
+  }
+  const updateSelectedInsight = async ({
+    insight,
+    insightId,
+    newStage,
+    activityId,
+  }: {
+    insight?: InsightType,
+    insightId?: string,
+    newStage?: string,
+    activityId: string,
+  }) => {
+    const updatedInsight = newStage ? { ...selectedInsightRef.current, stage: newStage } : insight ? insight : insightId ? await getInsight(insightId) : null;
+
+    if (!selectedInsightRef.current) return;
+    if (!updatedInsight) return;
+
+    const diff = getChangedFields(
+      selectedInsightRef.current,
+      updatedInsight,
+      {
+        ignoreFields: [
+          '__typename' as keyof InsightType,
+          'nodeId',
+          'columnOrder',
+        ],
+      }
+    );
+    if (diff.length === 0) return;
+
+    function setField<K extends keyof InsightType>(
+      obj: Partial<InsightType>,
+      key: K,
+      value: InsightType[K]
+    ) {
+      obj[key] = value;
+    }
+    const updates = diff.reduce<Partial<InsightType>>((acc, curr) => {
+      if (curr && curr.newValue) { setField(acc, curr.field, curr.newValue); }
+      return acc;
+    }, {});
+    setSelectedInsightUpdates(prev => ({
+      ...prev,
+      [activityId]: updates,
+    }));
+
+    const timer = setTimeout(() => {
+      setSelectedInsightUpdates(prev => {
+        const cloned = { ...prev };
+        delete cloned[activityId];
+        return cloned;
+      });
+      clearTimeout(timer);
+    }, 1000);
+    setSelectedInsight(updatedInsight);
+  }
+
+  const getActivity = async (activityId: string) => {
+    try {
+      const { data } = await client.query<ActivityResponseType>({
+        query: LIST_INSIGHT_ACTIVITY,
+        variables: {
+          first: 1,
+          filter: {
+            id: {
+              eq: activityId,
+            },
+          },
+        },
+        fetchPolicy: 'network-only',
+      });
+      const activity = data?.insightActivitiesCollection?.edges?.[0]?.node;
+      return activity;
+    } catch (error) {
+      console.error(
+        `Encountered error while fetching activity "${activityId}" : \n`, JSON.stringify(error, null, 2),
+      )
+    }
+  }
+  const addActivityToActivityLog = async ({
+    activity,
+    activityId,
+    insightId
+  }: {
+    activity?: Activity,
+    activityId?: string,
+    insightId: string;
+  }) => {
+    const completeActivity = activity ? activity : activityId ? await getActivity(activityId) : null;
+    if (!completeActivity) return;
+
+    client.cache.updateQuery<ActivityResponseType>(
+      {
+        query: LIST_INSIGHT_ACTIVITY,
+        variables: {
+          filter: {
+            insightId: {
+              eq: insightId,
+            },
+          },
+          first: 5,
+        },
+      },
+      (existingData) => {
+        if (!existingData) return existingData;
+
+        // prevent duplicates
+        const alreadyExists =
+          existingData.insightActivitiesCollection.edges.some(
+            (edge) => edge.node.id === completeActivity.id
+          );
+
+        if (alreadyExists) {
+          return existingData;
+        }
+
+        return {
+          ...existingData,
+          insightActivitiesCollection: {
+            ...existingData.insightActivitiesCollection,
+            edges: [
+              {
+                node: completeActivity,
+              },
+
+              // prepend existing items
+              ...existingData.insightActivitiesCollection.edges,
+            ].slice(0, 5), // maintain page size
+          },
+        };
+      }
+    );
+  }
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const setupSubscription = async () => {
+      const currentUserId = await supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          return data.session?.user?.id;
+        })
+        .catch((error) => {
+          console.error(error);
+          return undefined;
+        });
+
+      if (!currentUserId) {
+        return;
+      }
+
+      channel = supabase
+        .channel('insight-activity-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'insight_activities',
+
+            filter: `user_id=neq.${currentUserId}`,
+          },
+          async (payload) => {
+            try {
+              const activity = payload.new as ActivitySubscriptionType;
+              const activityId = activity.id;
+              const insightId = activity.insight_id;
+
+              if (activity.action === INSIGHT_ACTIVITY_ACTIONS.MOVE) {
+                const completeActivity = await getActivity(activityId);
+
+                if (completeActivity && selectedStageRef.current === completeActivity.oldValue) {
+                  Toast.show({
+                    type: 'info',
+                    text1: `${completeActivity.user.fullName} moved "${completeActivity.insight.title}" to ${completeActivity.newValue}`,
+                    position: 'bottom',
+                  });
+                }
+
+                if (insightId === selectedInsightRef.current?.id) {
+                  if (activity && activity.new_value) {
+                    updateSelectedInsight({ newStage: activity.new_value, insightId, activityId });
+                    updateListInsightCache({ newStage: activity.new_value, insightId });
+                  }
+                  if (completeActivity) addActivityToActivityLog({ activity: completeActivity, insightId });
+                } else {
+                  updateListInsightCache({ insightId });
+                }
+              } else if (activity.action === INSIGHT_ACTIVITY_ACTIONS.CREATE) {
+                updateListInsightCache({ insightId });
+
+                const activity = await getActivity(activityId);
+                if (activity) {
+                  Toast.show({
+                    type: 'info',
+                    text1: `${activity.user.fullName} created "${activity.insight.title}"`,
+                    position: 'bottom',
+                  });
+                }
+              } else if (activity.action === INSIGHT_ACTIVITY_ACTIONS.EDIT) {
+                const insight = await getInsight(insightId);
+                if (insight) updateListInsightCache({ insight, insightId });
+
+                if (insightId === selectedInsightRef.current?.id) {
+                  if (insight) updateSelectedInsight({ insight, insightId, activityId });
+                  addActivityToActivityLog({ activityId, insightId });
+                }
+              }
+            } catch (error) {
+              console.error(error);
+            }
+          }
+        )
+        .subscribe();
+    }
+    setupSubscription();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -348,6 +683,7 @@ export default function InsightsList() {
           visible={detailSheetVisible}
           setVisible={setDetailSheetVisible}
           insight={selectedInsight}
+          insightUpdates={selectedInsightUpdates}
           onEdit={() => {
             setInsightToEdit(selectedInsight);
             setDetailSheetVisible(false);
@@ -355,7 +691,6 @@ export default function InsightsList() {
             setCreateInsightFormVisible(true);
           }}
           onMoveStage={() => {
-            console.log('move stage')
             setInsightToEdit(selectedInsight);
             setDetailSheetVisible(false);
             setEditInsightFlow(true);
