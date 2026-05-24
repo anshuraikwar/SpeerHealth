@@ -354,7 +354,17 @@ export default function InsightDetailSheet({
                               }}
                             />
                           </View>
-                          <View>
+                          <View style={{ flex: 1, flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                            <Text>{activity.action}</Text>
+
+                            <View
+                              style={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: 999,
+                                backgroundColor: "rgb(73,69,79)",
+                              }}
+                            />
                             <Text>{activity.user.fullName}</Text>
                           </View>
                         </View>

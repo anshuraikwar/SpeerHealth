@@ -6,6 +6,9 @@ import { InsightNodeType, InsightResponseType, InsightType } from '../../type/In
 import { Ionicons } from '@expo/vector-icons';
 
 import stages from '../../constants/stages';
+import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
+
+import { supabase } from '../../lib/supabase';
 
 import { capitalize } from '../../utils/string-utils';
 
@@ -13,6 +16,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 
 import { LIST_INSIGHTS } from '../../graphql/queries/listInsights';
 import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
+import { CREATE_INSIGHT_ACTIVITY } from '../../graphql/mutations/createInsigntActivity';
 
 import {
   FlatList,
@@ -106,6 +110,10 @@ export default function InsightsList() {
     return segregated;
   }, [insights]);
 
+  const [createInsightActivity] = useMutation(
+    CREATE_INSIGHT_ACTIVITY
+  );
+
   const [updateInsight] = useMutation(
     UPDATE_INSIGHT
   );
@@ -138,6 +146,31 @@ export default function InsightsList() {
               },
             ],
           },
+        },
+      });
+
+      const currentUserId = await supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          return data.session?.user?.id;
+        })
+        .catch((error) => {
+        });
+
+      await createInsightActivity({
+        variables: {
+          input: [
+            {
+              insightId: insight.id,
+              userId: currentUserId,
+
+              action: INSIGHT_ACTIVITY_ACTIONS.MOVE,
+
+              fieldName: 'stage',
+              oldValue: insight.stage,
+              newValue: nextStage,
+            },
+          ],
         },
       });
       Toast.show({

@@ -14,9 +14,12 @@ import { HCPResponseType } from '../../type/HCPType';
 
 import stages from '../../constants/stages';
 import { PRIORITIES } from '../../constants/priorities';
+import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
 
 import { useMutation } from '@apollo/client/react';
 import { supabase } from '../../lib/supabase';
+
+import { getChangedFields, getInsightDiff } from '../../utils/insight-diff';
 
 import {
   insightSchema,
@@ -27,6 +30,7 @@ import { LIST_TAGS } from '../../graphql/queries/listTags';
 import { LIST_CATEGORIES } from '../../graphql/queries/listCategories';
 import { CREATE_INSIGHT } from '../../graphql/mutations/createInsight';
 import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
+import { CREATE_INSIGHT_ACTIVITY } from '../../graphql/mutations/createInsigntActivity';
 
 import {
   Modal,
@@ -163,6 +167,10 @@ export default function CreateInsightForm({
   });
   const loading = creating || updating;
 
+  const [createInsightActivity] = useMutation(
+    CREATE_INSIGHT_ACTIVITY
+  );
+
   const [showHCPDropDown, setShowHCPDropDown] =
     useState(false);
 
@@ -181,14 +189,15 @@ export default function CreateInsightForm({
 
     mode: 'onChange',
 
+    // TODO: UNDO
     defaultValues: {
-      title: '',
-      description: '',
-      priority: '',
+      title: new Date().toISOString(),
+      description: 'Test insight',
+      priority: 'P4',
       category: '',
-      stage: '',
+      stage: 'observation',
       linkedHCP: '',
-      drugName: '',
+      drugName: 'Test Drug',
       tags: [],
     },
   });
@@ -261,7 +270,7 @@ export default function CreateInsightForm({
     values: InsightFormValues
   ) => {
     try {
-      const userId = await supabase.auth
+      const currentUserId = await supabase.auth
         .getSession()
         .then(({ data }) => {
           return data.session?.user?.id;
@@ -280,7 +289,7 @@ export default function CreateInsightForm({
         payload['hcpId'] = values.linkedHCP;
         payload['categoryId'] = values.category;
 
-        await updateInsight({
+        const response = await updateInsight({
           variables: {
             filter: {
               id: {
@@ -291,25 +300,85 @@ export default function CreateInsightForm({
           },
         });
 
+        const updatedInsight = response.data?.updateInsightsCollection.records[0];
+        if (updatedInsight) {
+          const diff = getChangedFields(
+            insight,
+            updatedInsight,
+            {
+              ignoreFields: [
+                'updatedAt',
+                'createdAt',
+                'nodeId',
+              ],
+            }
+          );
+
+          const {
+            fieldNames,
+            oldValue,
+            newValue,
+          } = getInsightDiff(diff);
+          await createInsightActivity({
+            variables: {
+              input: [
+                {
+                  insightId: insight.id,
+                  userId: currentUserId,
+
+                  action: INSIGHT_ACTIVITY_ACTIONS.EDIT,
+
+                  fieldName: fieldNames.join(', '),
+                  oldValue: JSON.stringify(oldValue),
+                  newValue: JSON.stringify(newValue),
+                },
+              ],
+            },
+          });
+        }
+
         Toast.show({
           type: 'success',
-          text1: 'Insight created',
-          text2: `Your insight was successfully created`,
+          text1: 'Insight saved',
+          text2: `Your updated insight was successfully saved`,
           position: 'bottom',
         });
       } else {
-        payload['createdBy'] = userId;
-        await createInsight({
+        payload['createdBy'] = currentUserId;
+        const result = await createInsight({
           variables: {
             input: [
               payload,
             ],
           },
         });
+
+        const createdInsight =
+          result.data?.insertIntoInsightsCollection?.records?.[0];
+
+        if (createdInsight) {
+          await createInsightActivity({
+            variables: {
+              input: [
+                {
+                  insightId: createdInsight.id,
+                  userId: currentUserId,
+
+                  action: INSIGHT_ACTIVITY_ACTIONS.CREATE,
+
+                  fieldName: null,
+                  oldValue: null,
+                  newValue: createdInsight.title,
+                },
+              ],
+            },
+          });
+        }
+
         Toast.show({
           type: 'success',
-          text1: 'Insight saved',
-          text2: `Your updated insight was successfully saved`,
+          text1: 'Insight created',
+          text2: `Your insight was successfully created`,
           position: 'bottom',
         });
       }
