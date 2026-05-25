@@ -46,14 +46,6 @@ export default function InsightDetailSheet({
 }) {
   const theme = useTheme();
 
-  // const [insight, setLatestInsight] = useState<InsightType>(insight);
-  // const insightRef = useRef(insight);
-  // useEffect(() => {
-  //   insightRef.current = insight;
-  // }, [insight]);
-
-  // const [insightUpdates, setInsightUpdates] = useState<Record<string, Partial<InsightType>>>({});
-
   const priority =
     priorityColors[insight?.priority] ??
     priorityColors.P4;
@@ -156,7 +148,7 @@ export default function InsightDetailSheet({
 
                 {/* PRIORITY */}
                 <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, color: 'priority' in accumulatedUpdates ? 'yellow' : '#fff' }}>
+                  <Text variant="titleMedium" style={{ marginBottom: 4, color: 'priority' in accumulatedUpdates || true ? 'yellow' : '#fff' }}>
                     Priority
                   </Text>
 
@@ -164,11 +156,11 @@ export default function InsightDetailSheet({
                     <Chip
                       compact
                       style={{
-                        backgroundColor: 'priority' in accumulatedUpdates ? 'yellow' : priority.container,
+                        backgroundColor: priority.container,
                         borderRadius: 999,
                       }}
                       textStyle={{
-                        color: priority.text,
+                        color: 'priority' in accumulatedUpdates ? 'yellow' : priority.text,
                         fontWeight: '700',
                         marginVertical: 2,
                       }}

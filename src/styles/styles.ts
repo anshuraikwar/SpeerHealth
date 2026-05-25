@@ -1,9 +1,11 @@
 import { StyleSheet } from 'react-native'
 
 export const appStyles = StyleSheet.create({
+  layout: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    marginTop: 52,
     paddingBottom: 12,
     padding: 12,
     backgroundColor: '#000000',

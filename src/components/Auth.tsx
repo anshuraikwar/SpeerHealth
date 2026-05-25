@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import { supabase } from '../lib/supabase'
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStyles } from '../styles/styles'
+import { supabase } from '../lib/supabase'
+import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 export default function Auth() {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,7 +34,7 @@ export default function Auth() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Text style={styles.label}>Email</Text>
         <TextInput

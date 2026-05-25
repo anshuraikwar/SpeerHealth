@@ -18,6 +18,7 @@ import Auth from './src/components/Auth';
 import ListInsights from './src/components/list-insights';
 import AppErrorBoundary from './src/components/error-boundary';
 import OfflineBanner from './src/components/OfflineBanner';
+import StatusBar from './src/components/status-bar';
 
 const theme = {
   ...MD3DarkTheme,
@@ -48,7 +49,7 @@ const theme = {
   },
 };
 
-export default function App() {
+function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const styles = appStyles;
 
@@ -152,21 +153,34 @@ export default function App() {
   };
 
   return (
+    <>
+      <OfflineBanner />
+
+      {userId ? (
+        <View style={styles.layout}>
+          <StatusBar />
+          <View style={styles.container}>
+            <ListInsights />
+          </View>
+        </View>
+      ) : <Auth />}
+
+      <Toast
+        config={toastConfig}
+      />
+    </>
+  )
+}
+
+export default function AppWrapper() {
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <PaperProvider theme={theme}>
           <ApolloProvider client={apolloClient}>
             <AppErrorBoundary>
               <OfflineProvider>
-                <OfflineBanner />
-
-                <View style={styles.container}>
-                  {userId ? <ListInsights /> : <Auth />}
-                </View>
-
-                <Toast
-                  config={toastConfig}
-                />
+                <App />
               </OfflineProvider>
             </AppErrorBoundary>
           </ApolloProvider>
