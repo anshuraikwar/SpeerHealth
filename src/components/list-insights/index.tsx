@@ -589,6 +589,10 @@ export default function InsightsList() {
                   setSelectedInsight(insight);
                   setDetailSheetVisible(true);
                 }}
+                onLongPress={() => {
+                  setInsightToEdit(insight);
+                  setStageSelectorVisible(true);
+                }}
               >
                 <InsightCard insight={insight} updateStage={updateStage} />
               </Pressable>
