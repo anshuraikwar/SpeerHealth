@@ -25,6 +25,7 @@
     "expo-status-bar": "~3.0.9",
     "graphql": "^16.14.0",
     "react": "19.1.0",
+    "react-error-boundary": "^6.1.2",
     "react-hook-form": "^7.76.0",
     "react-native": "0.81.5",
     "react-native-chart-kit": "^6.12.2",

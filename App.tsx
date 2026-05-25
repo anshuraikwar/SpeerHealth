@@ -15,6 +15,7 @@ import { supabase } from './src/lib/supabase';
 import { View } from 'react-native';
 import Auth from './src/components/Auth';
 import ListInsights from './src/components/list-insights';
+import AppErrorBoundary from './src/components/error-boundary';
 
 const theme = {
   ...MD3DarkTheme,
@@ -153,13 +154,15 @@ export default function App() {
       <SafeAreaProvider>
         <PaperProvider theme={theme}>
           <ApolloProvider client={apolloClient}>
-            <View style={styles.container}>
-              {userId ? <ListInsights /> : <Auth />}
-            </View>
+            <AppErrorBoundary>
+              <View style={styles.container}>
+                {userId ? <ListInsights /> : <Auth />}
+              </View>
 
-            <Toast
-              config={toastConfig}
-            />
+              <Toast
+                config={toastConfig}
+              />
+            </AppErrorBoundary>
           </ApolloProvider>
         </PaperProvider>
       </SafeAreaProvider>
