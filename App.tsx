@@ -11,11 +11,13 @@ import { appStyles } from './src/styles/styles';
 
 import { apolloClient } from './src/services/apollo';
 import { supabase } from './src/lib/supabase';
+import { OfflineProvider } from './src/providers/OfflineProvider';
 
 import { View } from 'react-native';
 import Auth from './src/components/Auth';
 import ListInsights from './src/components/list-insights';
 import AppErrorBoundary from './src/components/error-boundary';
+import OfflineBanner from './src/components/OfflineBanner';
 
 const theme = {
   ...MD3DarkTheme,
@@ -155,13 +157,17 @@ export default function App() {
         <PaperProvider theme={theme}>
           <ApolloProvider client={apolloClient}>
             <AppErrorBoundary>
-              <View style={styles.container}>
-                {userId ? <ListInsights /> : <Auth />}
-              </View>
+              <OfflineProvider>
+                <OfflineBanner />
 
-              <Toast
-                config={toastConfig}
-              />
+                <View style={styles.container}>
+                  {userId ? <ListInsights /> : <Auth />}
+                </View>
+
+                <Toast
+                  config={toastConfig}
+                />
+              </OfflineProvider>
             </AppErrorBoundary>
           </ApolloProvider>
         </PaperProvider>
