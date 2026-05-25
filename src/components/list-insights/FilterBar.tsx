@@ -9,7 +9,13 @@ export default function FilterBar({
   selectedPriorities,
   setSelectedPriorities,
   onClear,
-}: any) {
+}: {
+  search: string;
+  setSearch:React.Dispatch<React.SetStateAction<string>>;
+  selectedPriorities: string[];
+  setSelectedPriorities:React.Dispatch<React.SetStateAction<string[]>>;
+  onClear: () => void;
+}) {
   const togglePriority = (p: string) => {
     if (selectedPriorities.includes(p)) {
       setSelectedPriorities(

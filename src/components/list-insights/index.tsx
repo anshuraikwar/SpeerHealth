@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 
 import { InsightNodeType, ListInsightResponseType, InsightType } from '../../type/InsightType';
+import { Activity, ActivityResponseType, ActivitySubscriptionType } from '../../type/ActivityType';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -11,12 +12,14 @@ import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
 import { supabase } from '../../lib/supabase';
 
 import { capitalize } from '../../utils/string-utils';
+import { getChangedFields } from '../../utils/insight-diff';
 
 import { useDebounce } from '../../hooks/useDebounce';
 
 import { LIST_INSIGHTS } from '../../graphql/queries/listInsights';
 import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
 import { CREATE_INSIGHT_ACTIVITY } from '../../graphql/mutations/createInsigntActivity';
+import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
 
 import {
   FlatList,
@@ -37,9 +40,6 @@ import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../analytics';
 import StageSelector from '../stage-selector/stageSelector';
 import Toast from 'react-native-toast-message';
-import { LIST_INSIGHT_ACTIVITY } from '../../graphql/queries/listInsightActivity';
-import { Activity, ActivityNodeType, ActivityResponseType, ActivitySubscriptionType } from '../../type/ActivityType';
-import { getChangedFields } from '../../utils/insight-diff';
 
 export default function InsightsList() {
   const client = useApolloClient();
@@ -53,7 +53,7 @@ export default function InsightsList() {
   const [search, setSearch] = useState('');
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
 
-  const [selectedInsight, setSelectedInsight] = useState<any>(null);
+  const [selectedInsight, setSelectedInsight] = useState<InsightType | null>(null);
   const selectedInsightRef = useRef<InsightType>(null);
   useEffect(() => {
     selectedInsightRef.current = selectedInsight;
@@ -69,7 +69,7 @@ export default function InsightsList() {
 
   const [editInsightFlow, setEditInsightFlow] = useState(false);
   const [createInsightFormVisible, setCreateInsightFormVisible] = useState(false);
-  const [insightToEdit, setInsightToEdit] = useState<any>(null);
+  const [insightToEdit, setInsightToEdit] = useState<InsightType | null>(null);
 
   useEffect(() => {
     if (!createInsightFormVisible) {
@@ -353,7 +353,7 @@ export default function InsightsList() {
       });
       clearTimeout(timer);
     }, 1000);
-    setSelectedInsight(updatedInsight);
+    setSelectedInsight(updatedInsight as InsightType);
   }
 
   const getActivity = async (activityId: string) => {
@@ -636,7 +636,7 @@ export default function InsightsList() {
       >
         <Ionicons name="add" size={32} color="white" />
       </Pressable>
-      {createInsightFormVisible && (
+      {(createInsightFormVisible && insightToEdit) && (
         <CreateInsightForm
           visible={createInsightFormVisible}
           setVisible={setCreateInsightFormVisible}
@@ -678,7 +678,7 @@ export default function InsightsList() {
         />
       )}
 
-      {detailSheetVisible && (
+      {(detailSheetVisible && selectedInsight) && (
         <InsightDetailSheet
           visible={detailSheetVisible}
           setVisible={setDetailSheetVisible}
@@ -699,7 +699,7 @@ export default function InsightsList() {
         />
       )}
 
-      {stageSelectorVisible && (
+      {(stageSelectorVisible && insightToEdit) && (
         <StageSelector
           visible={stageSelectorVisible}
           setVisible={setStageSelectorVisible}

@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import { ApolloProvider } from '@apollo/client/react';
-import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
+import Toast, { BaseToast, BaseToastProps, ErrorToast } from 'react-native-toast-message';
 
 import { appStyles } from './src/styles/styles';
 
@@ -50,7 +50,8 @@ export default function App() {
   const styles = appStyles;
 
   useEffect(() => {
-    supabase.auth.getClaims().then(({ data: { claims } }) => {
+    supabase.auth.getClaims().then(({ data }) => {
+      const claims = data?.claims;
       if (claims) {
         setUserId(claims.sub)
       }
@@ -58,17 +59,19 @@ export default function App() {
 
     supabase.auth.onAuthStateChange(async (_event, _session) => {
       const {
-        data: { claims },
-      } = await supabase.auth.getClaims()
+        data,
+      } = await supabase.auth.getClaims();
+      const claims = data?.claims;
       if (claims) {
         setUserId(claims.sub)
       } else {
         setUserId(null)
       }
     })
-  }, [])
+  }, []);
+
   const toastConfig = {
-    success: (props: any) => (
+    success: (props: BaseToastProps) => (
       <BaseToast
         {...props}
         style={{
@@ -93,7 +96,7 @@ export default function App() {
       />
     ),
 
-    error: (props: any) => (
+    error: (props: BaseToastProps) => (
       <ErrorToast
         {...props}
         style={{
@@ -118,7 +121,7 @@ export default function App() {
       />
     ),
 
-    info: (props: any) => (
+    info: (props: BaseToastProps) => (
       <BaseToast
         {...props}
         style={{

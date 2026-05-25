@@ -9,7 +9,7 @@ import { styles } from './styles';
 
 import { TagResponseType } from '../../type/tagType';
 import { CategoriesResponseType } from '../../type/categoriesType';
-import { CreateInsightResponseType, InsightType, UpdateInsightResponseType } from '../../type/InsightType';
+import { CreateInsightResponseType, CreateInsightType, InsightType, UpdateInsightResponseType } from '../../type/InsightType';
 import { HCPResponseType } from '../../type/HCPType';
 
 import stages from '../../constants/stages';
@@ -278,7 +278,7 @@ export default function CreateInsightForm({
         .catch((error) => {
         });
 
-      const payload: any = {
+      const payload: CreateInsightType = {
         title: values.title,
         description: values.description,
         priority: values.priority,
@@ -344,7 +344,9 @@ export default function CreateInsightForm({
           position: 'bottom',
         });
       } else {
-        payload['createdBy'] = currentUserId;
+        if(currentUserId) {
+          payload['createdBy'] = currentUserId;
+        }
         const result = await createInsight({
           variables: {
             input: [

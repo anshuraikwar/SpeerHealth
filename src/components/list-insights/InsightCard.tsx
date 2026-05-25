@@ -22,7 +22,7 @@ export default function InsightCard({
   insight,
   updateStage,
 }: {
-  insight: any;
+  insight: InsightType;
   updateStage: (insight: InsightType, nextStage: string) => Promise<void>;
 }) {
   const theme = useTheme();

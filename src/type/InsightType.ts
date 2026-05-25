@@ -25,7 +25,7 @@ export type InsightType = {
   priority: string;
   columnOrder: number;
   drugName: string;
-  customFields: Record<string, any>;
+  customFields: Record<string, string>;
   createdAt: string;
   updatedAt: string;
   hcp: {
@@ -51,4 +51,15 @@ export type InsightType = {
       }
     }[]
   }
+}
+export type CreateInsightType = {
+  title: string;
+  description?: string;
+  stage: string;
+  priority: string;
+  drugName?: string;
+  customFields?: Record<string, string>;
+  hcpId?: string;
+  categoryId?: string;
+  createdBy?: string;
 }

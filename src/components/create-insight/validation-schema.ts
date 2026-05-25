@@ -7,13 +7,14 @@ export const insightSchema = z.object({
 
   description: z
     .string()
-    .min(10, 'Description must be at least 10 characters'),
+    .min(10, 'Description must be at least 10 characters')
+    .optional(),
 
   priority: z.string().min(1, 'Priority is required'),
 
   category: z.string().optional(),
 
-  stage: z.string().optional(),
+  stage: z.string(),
 
   linkedHCP: z.string().optional(),
 
