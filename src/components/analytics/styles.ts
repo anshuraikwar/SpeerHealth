@@ -11,16 +11,22 @@ export const styles = StyleSheet.create({
 
   sheetWrapper: {
     width: '100%',
+    maxHeight: '85%',
+    padding: 0,
+    flex: 1,
+    overflow: 'hidden',
   },
 
   sheet: {
-    backgroundColor: '#1e1e1e',
-    padding: 24,
+    height: '100%',
+    paddingHorizontal: 24,
     paddingTop: 8,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    minHeight: 300,
-    maxHeight: 700,
+    margin: 0,
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#1e1e1e',
   },
 
   handle: {

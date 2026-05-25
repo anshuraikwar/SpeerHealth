@@ -58,7 +58,7 @@ export default function CreateInsightForm({
   visible: boolean;
   setVisible: React.Dispatch<React.SetStateAction<boolean>>;
   editFlow: boolean;
-  insight: InsightType;
+  insight: InsightType | null;
 }) {
   const [createInsight, { loading: creating }] = useMutation<CreateInsightResponseType>(CREATE_INSIGHT, {
     update(cache, { data }) {
@@ -301,7 +301,7 @@ export default function CreateInsightForm({
         });
 
         const updatedInsight = response.data?.updateInsightsCollection.records[0];
-        if (updatedInsight) {
+        if (updatedInsight && insight) {
           const diff = getChangedFields(
             insight,
             updatedInsight,
@@ -344,7 +344,7 @@ export default function CreateInsightForm({
           position: 'bottom',
         });
       } else {
-        if(currentUserId) {
+        if (currentUserId) {
           payload['createdBy'] = currentUserId;
         }
         const result = await createInsight({

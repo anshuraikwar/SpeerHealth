@@ -148,7 +148,7 @@ export default function InsightDetailSheet({
 
                 {/* PRIORITY */}
                 <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 4, color: 'priority' in accumulatedUpdates || true ? 'yellow' : '#fff' }}>
+                  <Text variant="titleMedium" style={{ marginBottom: 4, color: 'priority' in accumulatedUpdates ? 'yellow' : '#fff' }}>
                     Priority
                   </Text>
 
@@ -445,7 +445,7 @@ export default function InsightDetailSheet({
               </ScrollView>
 
               {/* ACTIONS */}
-              <View style={{ marginTop: 48, gap: 10, flexDirection: 'row' }}>
+              <View style={{ marginTop: 12, gap: 10, flexDirection: 'row' }}>
                 <Button
                   mode="contained"
                   onPress={onEdit}

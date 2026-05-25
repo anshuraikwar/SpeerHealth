@@ -1,4 +1,3 @@
-
 import {
   StyleSheet,
 } from 'react-native';
@@ -12,15 +11,19 @@ export const styles = StyleSheet.create({
 
   sheetWrapper: {
     width: '100%',
+    maxHeight: '85%',
+    padding: 0,
+    overflow: 'hidden',
   },
 
   sheet: {
-    backgroundColor: '#1e1e1e',
     padding: 24,
     paddingTop: 8,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    minHeight: 300,
+    margin: 0,
+    justifyContent: 'center',
+    backgroundColor: '#1e1e1e',
   },
 
   handle: {

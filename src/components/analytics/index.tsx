@@ -11,7 +11,6 @@ import { InsightNodeType } from '../../type/InsightType';
 import {
   Pressable,
   View,
-  StyleSheet,
   Modal,
   Dimensions,
 } from 'react-native';
@@ -20,7 +19,6 @@ import {
   Portal,
   Surface,
   Divider,
-  useTheme,
 } from 'react-native-paper';
 import { ScrollView } from 'react-native-gesture-handler';
 import { styles } from './styles';
@@ -38,7 +36,6 @@ export default function AnalyticsBottomSheet({
   insights: InsightNodeType[],
   segregatedInsights: Record<string, InsightNodeType[]>;
 }) {
-  const theme = useTheme();
   const screenWidth = Dimensions.get('window').width;
 
   const donutData = [
@@ -207,7 +204,7 @@ export default function AnalyticsBottomSheet({
                       legendFontColor: item.legendFontColor,
                       legendFontSize: item.legendFontSize,
                     }))}
-                    width={screenWidth * 0.7}
+                    width={screenWidth * 0.8}
                     height={220}
                     accessor="population"
                     backgroundColor="transparent"

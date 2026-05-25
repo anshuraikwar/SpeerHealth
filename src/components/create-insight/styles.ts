@@ -13,7 +13,6 @@ export const styles = StyleSheet.create({
     width: '100%',
     maxHeight: '85%',
     padding: 0,
-    flex: 1,
     overflow: 'hidden',
   },
 
@@ -23,9 +22,7 @@ export const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    borderRadius: 20,
     margin: 0,
-    flex: 1,
     justifyContent: 'center',
   },
 
