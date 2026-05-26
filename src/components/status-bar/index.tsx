@@ -20,6 +20,7 @@ import OnlineUsers from "./onlineUsers";
 const NUMBER_OF_AVATARS = 3;
 export default function StatusBar() {
   const insets = useSafeAreaInsets();
+
   const [onlineUsersBottomSheetVisible, setOnlineUsersBottomSheetVisible] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<string>();
@@ -44,15 +45,21 @@ export default function StatusBar() {
   });
 
   const currentUser = data?.usersCollection?.edges?.[0]?.node;
+  const presenceEnabled = !!currentUser?.id;
 
-  const { onlineUsers } = usePresence({
-    id: currentUser?.id ?? '',
-    email: currentUser?.email ?? '',
-    fullName: currentUser?.fullName ?? '',
-    avatarUrl: currentUser?.avatarUrl,
-  });
+  const { onlineUsers } = usePresence(
+    presenceEnabled
+      ? {
+        id: currentUser.id,
+        email: currentUser.email,
+        fullName: currentUser.fullName,
+        avatarUrl: currentUser.avatarUrl,
+      }
+      : null
+  );
+
   const uniqueUsers = Array.from(
-    new Map(onlineUsers.map((u) => [u.fullName, u])).values()
+    new Map(onlineUsers.filter(u => u.id !== undefined).map((u) => [u.id, u])).values()
   );
   const visibleUsers = uniqueUsers.slice(0, NUMBER_OF_AVATARS);
   const overflowCount = uniqueUsers.length - NUMBER_OF_AVATARS;

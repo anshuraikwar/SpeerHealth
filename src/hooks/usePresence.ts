@@ -5,16 +5,27 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { OnlineUser } from '../type/onlineUserType';
 
-export function usePresence(user: OnlineUser) {
+export function usePresence(user: OnlineUser | null) {
+  const [isActive, setIsActive] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      setIsActive(state === 'active');
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id || !isActive) return;
+
     const channel = supabase.channel('presence:global', {
       config: {
         presence: {
-          key: user.id,
+          key: user?.id,
         },
       },
     });
@@ -22,6 +33,13 @@ export function usePresence(user: OnlineUser) {
     channelRef.current = channel;
 
     channel
+      // FOR DEBUGGING: DO NOT DELETE
+      // .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      //   console.log('\n\nJOIN', key, newPresences.map(u => u.fullName));
+      // })
+      // .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      //   console.log('\n\nLEAVE', key, leftPresences.map(u => u.fullName));
+      // })
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
 
@@ -41,10 +59,10 @@ export function usePresence(user: OnlineUser) {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
-            id: user.id,
-            email: user.email,
-            fullName: user.fullName,
-            avatarUrl: user.avatarUrl,
+            id: user?.id,
+            email: user?.email,
+            fullName: user?.fullName,
+            avatarUrl: user?.avatarUrl,
             online_at: new Date().toISOString(),
           });
         }
@@ -53,34 +71,7 @@ export function usePresence(user: OnlineUser) {
     return () => {
       channel.unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener(
-      'change',
-      async (state) => {
-        const channel = channelRef.current;
-
-        if (!channel) return;
-
-        if (state === 'active') {
-          await channel.track({
-            id: user.id,
-            email: user.email,
-            fullName: user.fullName,
-            avatarUrl: user.avatarUrl,
-            online_at: new Date().toISOString(),
-          });
-        } else {
-          await channel.untrack();
-        }
-      }
-    );
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+  }, [user?.id, isActive]);
 
   return {
     onlineUsers,

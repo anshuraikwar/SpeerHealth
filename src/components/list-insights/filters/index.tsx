@@ -66,7 +66,7 @@ export default function FilterBar({
   )
   return (
     <>
-      <View style={{ paddingTop: 12, paddingBottom: 12, gap: 12 }}>
+      <View style={{ display: 'flex', paddingVertical: 12, gap: 12 }}>
         <View style={{ display: 'flex', flexDirection: 'row', gap: 4, alignItems: 'center' }}>
           {/* Search */}
           <TextInput
@@ -94,19 +94,21 @@ export default function FilterBar({
           />
         </View>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {Object.keys(filters).map((filter) => {
-            const value = filters[filter];
-            return (
-              Array.isArray(value) ? (
-                value.map((filterValue) => (
-                  getFilterChip(filter, getValue(filterValue))
+        {Object.keys(filters).length > 0 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {Object.keys(filters).map((filter) => {
+              const value = filters[filter];
+              return (
+                Array.isArray(value) ? (
+                  value.map((filterValue) => (
+                    getFilterChip(filter, getValue(filterValue))
+                  ))
+                ) : (
+                  getFilterChip(filter, getValue(value))
                 ))
-              ) : (
-                getFilterChip(filter, getValue(value))
-              ))
-          })}
-        </View>
+            })}
+          </View>
+        )}
         {/* Clear */}
         {(search.trim().length > 0 || Object.keys(filters).length > 0) && (
           <Text
