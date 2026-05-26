@@ -16,7 +16,6 @@ import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
 
 import { supabase } from '../../lib/supabase';
 
-import { capitalize } from '../../utils/string-utils';
 import { getChangedFields } from '../../utils/insight-diff';
 
 import { useDebounce } from '../../hooks/useDebounce';
@@ -30,24 +29,25 @@ import {
   FlatList,
   Pressable,
   View,
-  RefreshControl,
 } from 'react-native';
 import {
   Text,
-  SegmentedButtons,
-  Divider,
-  ActivityIndicator,
 } from 'react-native-paper';
-import InsightCard from './InsightCard';
-import FilterBar from './filters';
 import InsightDetailSheet from '../insight-detail-sheet';
 import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../analytics';
 import StageSelector from '../stage-selector';
 import Toast from 'react-native-toast-message';
 import BoardActivity from '../board-activity';
+import InsightList from './InsightList';
 
-export default function InsightsList() {
+export default function InsightBoard({
+  view,
+  setView,
+}: {
+  view: string;
+  setView: React.Dispatch<React.SetStateAction<string>>;
+}) {
   const insets = useSafeAreaInsets();
   const client = useApolloClient();
 
@@ -650,103 +650,34 @@ export default function InsightsList() {
 
   return (
     <View style={{ flex: 1, }}>
-      {/* MAIN CONTENT */}
-      <View style={{ flex: 1, paddingHorizontal: 12, }}>
-        {/* Tabs */}
-        <View
-          style={{
-            paddingTop: 12,
-            paddingBottom: 8,
-          }}
-        >
-          <SegmentedButtons
-            value={selectedStage}
-            onValueChange={setSelectedStage}
-            density="small"
-            buttons={stages.map((stage) => ({
-              value: stage,
-              label: `(${segregatedInsights[stage].length ?? 0}) ${capitalize(stage)}`,
-            }))}
-          />
-        </View>
+      <InsightList
+        view={view}
+        setView={setView}
 
-        {/* FILTER BAR */}
-        <FilterBar
-          search={search}
-          setSearch={setSearch}
-          onClear={() => {
-            setSearch('');
-            setFilters({});
-          }}
-          filters={filters}
-          setFilters={setFilters}
-        />
+        selectedStage={selectedStage}
+        setSelectedStage={setSelectedStage}
+        segregatedInsights={segregatedInsights}
 
-        {loading && (
-          <ActivityIndicator />
-        )}
-        {error && (
-          <View style={{
-            padding: 16,
-            borderWidth: 1,
-            borderColor: "#F44336",
-            borderRadius: 4,
-            backgroundColor: "rgba(244, 67, 54, 0.1)"
-          }}>
-            <Text>Encountered error while fetching insight list: {error?.message}</Text>
-          </View>
-        )}
+        search={search}
+        setSearch={setSearch}
+        filters={filters}
+        setFilters={setFilters}
 
-        {/* INSIGHT CARDS LIST */}
-        <FlatList
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingBottom: 24
-          }}
-          data={segregatedInsights[selectedStage]}
-          keyExtractor={(item) => item.node.nodeId}
-          renderItem={({ item }) => {
-            const insight = item.node;
+        loading={loading}
+        error={error}
 
-            return (
-              <>
-                <Pressable
-                  onPress={() => {
-                    setSelectedInsight(insight);
-                    setDetailSheetVisible(true);
-                  }}
-                  onLongPress={() => {
-                    setInsightToEdit(insight);
-                    setStageSelectorVisible(true);
-                  }}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: higthlightedInsightId === insight.id ? 'yellow' : 'transparent',
-                  }}
-                >
-                  <InsightCard insight={insight} updateStage={updateStage} />
-                </Pressable>
-                <Divider />
-              </>
-            );
-          }}
-          ListEmptyComponent={
-            <View style={{
-              flex: 1,
-              padding: 8,
-              justifyContent: 'center',
-            }}>
-              <Text style={{ textAlign: 'center' }}>{loading ? 'Loading...' : 'No insights'}</Text>
-            </View>
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={() => { refetchInsightsList() }}
-            />
-          }
-        />
-      </View>
+        onCardPress={(insight: InsightType) => {
+          setSelectedInsight(insight);
+          setDetailSheetVisible(true);
+        }}
+        onLongPress={(insight: InsightType) => {
+          setInsightToEdit(insight);
+          setStageSelectorVisible(true);
+        }}
+        higthlightedInsightId={higthlightedInsightId}
+        updateStage={updateStage}
+        onRefresh={() => { refetchInsightsList() }}
+      />
       {/* BOTTOM TABS */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 4 }]}>
         <View style={styles.tab}>

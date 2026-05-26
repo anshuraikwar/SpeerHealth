@@ -15,7 +15,7 @@ import { OfflineProvider } from './src/providers/OfflineProvider';
 
 import { View } from 'react-native';
 import Auth from './src/components/Auth';
-import ListInsights from './src/components/list-insights';
+import ListInsights from './src/components/insight-board';
 import AppErrorBoundary from './src/components/error-boundary';
 import OfflineBanner from './src/components/OfflineBanner';
 import StatusBar from './src/components/status-bar';
@@ -52,6 +52,8 @@ const theme = {
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const styles = appStyles;
+
+  const [view, setView] = useState<string>('list');
 
   useEffect(() => {
     supabase.auth.getClaims().then(({ data }) => {
@@ -158,9 +160,9 @@ function App() {
 
       {userId ? (
         <View style={styles.layout}>
-          <StatusBar />
+          <StatusBar view={view} setView={setView} />
           <View style={styles.container}>
-            <ListInsights />
+            <ListInsights view={view} setView={setView} />
           </View>
         </View>
       ) : <Auth />}

@@ -16,9 +16,16 @@ import { Image } from 'react-native';
 import { Text } from "react-native-paper";
 import { Pressable, View } from "react-native";
 import OnlineUsers from "./onlineUsers";
+import { Ionicons } from "@expo/vector-icons";
 
 const NUMBER_OF_AVATARS = 3;
-export default function StatusBar() {
+export default function StatusBar({
+  view,
+  setView,
+}: {
+  view: string;
+  setView: React.Dispatch<React.SetStateAction<string>>;
+}) {
   const insets = useSafeAreaInsets();
 
   const [onlineUsersBottomSheetVisible, setOnlineUsersBottomSheetVisible] = useState(false);
@@ -73,6 +80,14 @@ export default function StatusBar() {
       }]}>
         <View style={styles.container}>
           <View style={styles.statusBar}>
+            <Pressable
+              style={{ borderWidth: 1, borderColor: 'white', borderRadius: 4, padding: 4 }}
+              onPress={() => {
+                setView(prev => prev === 'list' ? 'grid' : 'list');
+              }}
+            >
+              <Ionicons name={view === 'grid' ? 'list' : "grid-outline"} color='white' size={16} />
+            </Pressable>
             <Text variant={"titleLarge"} style={{ color: "#fff" }}>Insight Board</Text>
           </View>
           <Pressable onPress={() => setOnlineUsersBottomSheetVisible(true)}>

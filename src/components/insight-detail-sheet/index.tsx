@@ -4,7 +4,6 @@ import { styles } from './styles';
 import { priorityColors } from '../../styles/styles';
 
 import { InsightType } from '../../type/InsightType';
-import { ActivityResponseType } from '../../type/ActivityType';
 
 import { getRelativeTime } from '../../utils/time-utils';
 
@@ -15,7 +14,6 @@ import {
   Pressable,
   View,
   Modal,
-  FlatList,
 } from 'react-native';
 import {
   Text,

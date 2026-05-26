@@ -18,7 +18,9 @@ export const styles = StyleSheet.create({
   statusBar: {
     height: 32,
     display: 'flex',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   avatar: {
     height: 32,
