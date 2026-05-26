@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { gql } from '@apollo/client';
+import { NetworkStatus } from '@apollo/client';
 
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,11 +55,15 @@ export default function CreateInsightForm({
   setVisible,
   editFlow,
   insight,
+  triggerRefetch,
+  refetch,
 }: {
   visible: boolean;
   setVisible: React.Dispatch<React.SetStateAction<boolean>>;
   editFlow: boolean;
   insight: InsightType | null;
+  triggerRefetch: boolean;
+  refetch: () => void;
 }) {
   const [createInsight, { loading: creating }] = useMutation<CreateInsightResponseType>(CREATE_INSIGHT, {
     update(cache, { data }) {
@@ -112,13 +117,17 @@ export default function CreateInsightForm({
 
       if (!updatedInsight) return;
 
-      cache.writeFragment({
-        id: cache.identify({
-          __typename: 'Insights',
-          id: updatedInsight.id,
-        }),
+      if (triggerRefetch) {
+        // In case filters are applied, refetch a fresh list of filtered insights
+        refetch();
+      } else {
+        cache.writeFragment({
+          id: cache.identify({
+            __typename: 'Insights',
+            id: updatedInsight.id,
+          }),
 
-        fragment: gql`
+          fragment: gql`
           fragment UpdatedInsight on Insights {
             title
             description
@@ -158,11 +167,12 @@ export default function CreateInsightForm({
           }
         `,
 
-        data: {
-          __typename: 'Insights',
-          ...updatedInsight,
-        },
-      });
+          data: {
+            __typename: 'Insights',
+            ...updatedInsight,
+          },
+        });
+      }
     },
   });
   const loading = creating || updating;
@@ -216,23 +226,26 @@ export default function CreateInsightForm({
     }
   }, [insight]);
 
-  const { data: tagsData, loading: loadingTags, error: tagsError } = useQuery<TagResponseType>(LIST_TAGS, {
+  const { data: tagsData, loading: loadingTags, error: tagsError, networkStatus: tagsNetworkStatus, } = useQuery<TagResponseType>(LIST_TAGS, {
     fetchPolicy: 'cache-and-network',
   });
+  const isInitialLoadingTags = loadingTags && tagsNetworkStatus === NetworkStatus.loading;
   const tags = tagsData?.tagsCollection?.edges?.map(
     edge => edge.node
   ) ?? [];
 
-  const { data: categoriesData, loading: loadingCategories, error: categoriesError } = useQuery<CategoriesResponseType>(LIST_CATEGORIES, {
+  const { data: categoriesData, loading: loadingCategories, error: categoriesError, networkStatus: categoriesNetworkStatus, } = useQuery<CategoriesResponseType>(LIST_CATEGORIES, {
     fetchPolicy: 'cache-and-network',
   });
+  const isInitialLoadingCategories = loadingCategories && categoriesNetworkStatus === NetworkStatus.loading;
   const categories = categoriesData?.categoriesCollection?.edges?.map(
     edge => edge.node
   ) ?? [];
 
-  const { data: HCPData, loading: loadingHCPs, error: HCPError } = useQuery<HCPResponseType>(LIST_HCPS, {
+  const { data: HCPData, loading: loadingHCPs, error: HCPsError, networkStatus: HCPNetworkStatus, } = useQuery<HCPResponseType>(LIST_HCPS, {
     fetchPolicy: 'cache-and-network',
   });
+  const isInitialLoadingHCPs = loadingHCPs && HCPNetworkStatus === NetworkStatus.loading;
   const HCPs = HCPData?.hcpsCollection?.edges?.map(
     edge => edge.node
   ) ?? [];
@@ -516,6 +529,26 @@ export default function CreateInsightForm({
                     render={({ field }) => (
                       <View style={{ marginTop: 16, flexDirection: 'column', gap: 8 }}>
                         <Text variant="titleSmall">Category</Text>
+                        {isInitialLoadingCategories && (
+                          <View style={{
+                            flex: 1,
+                            padding: 8,
+                            justifyContent: 'center',
+                          }}>
+                            <Text style={{ textAlign: 'center' }}>Loading...</Text>
+                          </View>
+                        )}
+                        {categoriesError && (
+                          <View style={{
+                            padding: 16,
+                            borderWidth: 1,
+                            borderColor: "#F44336",
+                            borderRadius: 4,
+                            backgroundColor: "rgba(244, 67, 54, 0.1)"
+                          }}>
+                            <Text>Encountered error while fetching categories: {categoriesError?.message}</Text>
+                          </View>
+                        )}
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           {categories?.map((category) => (
                             <Chip
@@ -574,66 +607,81 @@ export default function CreateInsightForm({
                       const selectedHCP = HCPs.find(hcp => hcp.id === field.value)?.name;
 
                       return (
-                        <View style={{ position: 'relative', }}>
-                          <Pressable onPress={() => setShowHCPDropDown(true)}>
-                            <TextInput
-                              label="Linked HCP"
-                              mode="outlined"
-                              placeholder='Search HCPs'
-                              value={selectedHCP}
-                              onChangeText={field.onChange}
-                              style={styles.field}
-                              onPress={() => setShowHCPDropDown(true)}
-                              readOnly
-                            />
-                          </Pressable>
-                          {showHCPDropDown && (
+                        <View style={{ marginTop: 16, flexDirection: 'column' }}>
+                          <Text variant="titleSmall">Linked HCP</Text>
+                          {HCPsError && (
                             <View style={{
-                              position: 'absolute',
-                              top: '100%',
-                              height: 200,
-                              width: "100%",
-                              backgroundColor: '#000',
-                              zIndex: 10,
+                              padding: 16,
+                              borderWidth: 1,
+                              borderColor: "#F44336",
+                              borderRadius: 4,
+                              marginTop: 8,
+                              backgroundColor: "rgba(244, 67, 54, 0.1)"
                             }}>
-                              <ScrollView>
-                                {HCPs.map((hcp) => (
-                                  <View
-                                    key={hcp.id}
-                                    style={{
-                                      borderBottomWidth: 1,
-                                      borderColor: 'gray',
-                                      marginHorizontal: 16,
-                                      flex: 1,
-                                    }}
-                                  >
-                                    <Pressable
-                                      style={{
-                                        paddingVertical: 16,
-                                        flex: 1,
-                                        flexDirection: 'row',
-                                        justifyContent: 'space-between',
-                                      }}
-                                      onPress={() => {
-                                        field.onChange(hcp.id);
-                                        setShowHCPDropDown(false);
-                                      }}
-                                    >
-                                      <Text>{hcp.name}</Text>
-                                      <View style={{
-                                        flex: 1,
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-end',
-                                      }}>
-                                        <Text variant='bodySmall' style={{ color: 'gray' }}>{hcp.specialty}</Text>
-                                        <Text variant='bodySmall' style={{ color: 'gray' }}>{hcp.institution}</Text>
-                                      </View>
-                                    </Pressable>
-                                  </View>
-                                ))}
-                              </ScrollView>
+                              <Text>Encountered error while fetching HCPs: {HCPsError?.message}</Text>
                             </View>
                           )}
+                          <View style={{ position: 'relative', }}>
+                            <Pressable onPress={() => setShowHCPDropDown(true)}>
+                              <TextInput
+                                label="Linked HCP"
+                                mode="outlined"
+                                placeholder={isInitialLoadingHCPs ? 'Loading...' : 'Search HCPs'}
+                                value={selectedHCP}
+                                // onChangeText={field.onChange}
+                                style={[styles.field, { marginTop: 0 }]}
+                                onPress={() => setShowHCPDropDown(true)}
+                                readOnly
+                              />
+                            </Pressable>
+                            {showHCPDropDown && (
+                              <View style={{
+                                position: 'absolute',
+                                top: '100%',
+                                height: 200,
+                                width: "100%",
+                                backgroundColor: '#000',
+                                zIndex: 10,
+                              }}>
+                                <ScrollView>
+                                  {HCPs.map((hcp) => (
+                                    <View
+                                      key={hcp.id}
+                                      style={{
+                                        borderBottomWidth: 1,
+                                        borderColor: 'gray',
+                                        marginHorizontal: 16,
+                                        flex: 1,
+                                      }}
+                                    >
+                                      <Pressable
+                                        style={{
+                                          paddingVertical: 16,
+                                          flex: 1,
+                                          flexDirection: 'row',
+                                          justifyContent: 'space-between',
+                                        }}
+                                        onPress={() => {
+                                          field.onChange(hcp.id);
+                                          setShowHCPDropDown(false);
+                                        }}
+                                      >
+                                        <Text>{hcp.name}</Text>
+                                        <View style={{
+                                          flex: 1,
+                                          flexDirection: 'column',
+                                          alignItems: 'flex-end',
+                                        }}>
+                                          <Text variant='bodySmall' style={{ color: 'gray' }}>{hcp.specialty}</Text>
+                                          <Text variant='bodySmall' style={{ color: 'gray' }}>{hcp.institution}</Text>
+                                        </View>
+                                      </Pressable>
+                                    </View>
+                                  ))}
+                                </ScrollView>
+                              </View>
+                            )}
+                          </View>
                         </View>
                       )
                     }}
@@ -661,6 +709,26 @@ export default function CreateInsightForm({
                     render={({ field }) => (
                       <View style={{ marginTop: 16, flexDirection: 'column', gap: 8 }}>
                         <Text variant="titleSmall">Tags</Text>
+                        {isInitialLoadingTags && (
+                          <View style={{
+                            flex: 1,
+                            padding: 8,
+                            justifyContent: 'center',
+                          }}>
+                            <Text style={{ textAlign: 'center' }}>Loading...</Text>
+                          </View>
+                        )}
+                        {tagsError && (
+                          <View style={{
+                            padding: 16,
+                            borderWidth: 1,
+                            borderColor: "#F44336",
+                            borderRadius: 4,
+                            backgroundColor: "rgba(244, 67, 54, 0.1)"
+                          }}>
+                            <Text>Encountered error while fetching tags: {tagsError?.message}</Text>
+                          </View>
+                        )}
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           {tags?.map((currentTag) => (
                             <Chip
