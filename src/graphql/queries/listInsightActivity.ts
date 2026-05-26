@@ -2,11 +2,13 @@ import { gql } from '@apollo/client';
 
 export const LIST_INSIGHT_ACTIVITY = gql`
   query GetInsightActivities(
+    $cursor: Cursor, 
     $first: Int = 5
     $filter: InsightActivitiesFilter
   ) {
     insightActivitiesCollection(
       first: $first
+      after: $cursor
       filter: $filter
       orderBy: [{ createdAt: DescNullsLast }]
     ) {
@@ -16,6 +18,7 @@ export const LIST_INSIGHT_ACTIVITY = gql`
           insight {
             id
             title
+            stage
           }
           user {
             nodeId
@@ -28,6 +31,10 @@ export const LIST_INSIGHT_ACTIVITY = gql`
           newValue
           createdAt
         }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }

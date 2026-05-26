@@ -6,8 +6,6 @@ export const appStyles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingBottom: 12,
-    padding: 12,
     backgroundColor: '#000000',
   },
   verticallySpaced: {

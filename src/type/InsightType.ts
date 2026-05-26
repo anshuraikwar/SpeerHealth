@@ -11,6 +11,10 @@ export type UpdateInsightResponseType = {
 export type ListInsightResponseType = {
   insightsCollection: {
     edges: InsightNodeType[];
+    pageInfo: {
+      hasNextPage: boolean;
+      endCursor: string | null;
+    };
   }
 }
 export type InsightNodeType = {

@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { styles } from './styles';
+import { Ionicons } from '@expo/vector-icons';
 
 import { InsightNodeType, ListInsightResponseType, InsightType } from '../../type/InsightType';
 import { Activity, ActivityResponseType, ActivitySubscriptionType } from '../../type/ActivityType';
-
-import { Ionicons } from '@expo/vector-icons';
 
 import stages from '../../constants/stages';
 import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
@@ -40,8 +42,10 @@ import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../analytics';
 import StageSelector from '../stage-selector/stageSelector';
 import Toast from 'react-native-toast-message';
+import BoardActivity from '../board-activity';
 
 export default function InsightsList() {
+  const insets = useSafeAreaInsets();
   const client = useApolloClient();
 
   const [selectedStage, setSelectedStage] = useState(stages[0]);
@@ -60,7 +64,6 @@ export default function InsightsList() {
   }, [selectedInsight]);
   const [selectedInsightUpdates, setSelectedInsightUpdates] = useState<Record<string, Partial<InsightType>>>({});
   const [detailSheetVisible, setDetailSheetVisible] = useState(false);
-
   useEffect(() => {
     if (!detailSheetVisible) {
       setSelectedInsight(null);
@@ -70,7 +73,6 @@ export default function InsightsList() {
   const [editInsightFlow, setEditInsightFlow] = useState(false);
   const [createInsightFormVisible, setCreateInsightFormVisible] = useState(false);
   const [insightToEdit, setInsightToEdit] = useState<InsightType | null>(null);
-
   useEffect(() => {
     if (!createInsightFormVisible) {
       setInsightToEdit(null);
@@ -81,6 +83,13 @@ export default function InsightsList() {
   const [stageSelectorVisible, setStageSelectorVisible] = useState(false);
 
   const [analyticsSheetVisible, setAnalyticsSheetVisible] = useState(false);
+
+  const [boardActivitySheetVisible, setBoardActivitySheetVisible] = useState(false);
+  const boardActivitySheetVisibleRef = useRef<boolean>(null);
+  useEffect(() => {
+    boardActivitySheetVisibleRef.current = boardActivitySheetVisible;
+  }, [boardActivitySheetVisible]);
+  const [unreadActivityCount, setUnreadActivityCount] = useState<number>(0);
 
   const debouncedSearch = useDebounce(search, 300);
   const filter = React.useMemo(() => {
@@ -106,7 +115,12 @@ export default function InsightsList() {
     return conditions.length > 0 ? { and: conditions } : {};
   }, [debouncedSearch, selectedPriorities]);
 
-  const { data, loading, error, refetch: refetchInsightsList } = useQuery<ListInsightResponseType>(LIST_INSIGHTS, {
+  const {
+    data,
+    loading,
+    error,
+    refetch: refetchInsightsList
+  } = useQuery<ListInsightResponseType>(LIST_INSIGHTS, {
     variables: {
       filter,
     },
@@ -123,6 +137,22 @@ export default function InsightsList() {
     });
     return segregated;
   }, [insights]);
+
+  const flatListRef = useRef<FlatList>(null);
+  const [higthlightedInsightId, setHigthlightedInsightId] = useState<string | null>(null);
+  const scrollToHigthlightedInsight = () => {
+    if (higthlightedInsightId) {
+      const index = segregatedInsights[selectedStage].findIndex((item) => item.node.id === higthlightedInsightId);
+
+      if (index !== -1) {
+        flatListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0.5, // center item
+        });
+      }
+    }
+  };
 
   const [createInsightActivity] = useMutation(
     CREATE_INSIGHT_ACTIVITY
@@ -378,7 +408,7 @@ export default function InsightsList() {
       )
     }
   }
-  const addActivityToActivityLog = async ({
+  const addActivityToSelectedInsightActivityLog = async ({
     activity,
     activityId,
     insightId
@@ -400,6 +430,54 @@ export default function InsightsList() {
             },
           },
           first: 5,
+        },
+      },
+      (existingData) => {
+        if (!existingData) return existingData;
+
+        // prevent duplicates
+        const alreadyExists =
+          existingData.insightActivitiesCollection.edges.some(
+            (edge) => edge.node.id === completeActivity.id
+          );
+
+        if (alreadyExists) {
+          return existingData;
+        }
+
+        return {
+          ...existingData,
+          insightActivitiesCollection: {
+            ...existingData.insightActivitiesCollection,
+            edges: [
+              {
+                node: completeActivity,
+              },
+
+              // prepend existing items
+              ...existingData.insightActivitiesCollection.edges,
+            ].slice(0, 5), // maintain page size
+          },
+        };
+      }
+    );
+  }
+  const addActivityToBoardActivityLog = async ({
+    activity,
+    activityId,
+  }: {
+    activity?: Activity,
+    activityId?: string,
+  }) => {
+    const completeActivity = activity ? activity : activityId ? await getActivity(activityId) : null;
+    if (!completeActivity) return;
+
+    client.cache.updateQuery<ActivityResponseType>(
+      {
+        query: LIST_INSIGHT_ACTIVITY,
+        variables: {
+          filter: {},
+          first: 20,
         },
       },
       (existingData) => {
@@ -468,6 +546,7 @@ export default function InsightsList() {
               const activityId = activity.id;
               const insightId = activity.insight_id;
 
+              setUnreadActivityCount(prev => prev + 1);
               if (activity.action === INSIGHT_ACTIVITY_ACTIONS.MOVE) {
                 const completeActivity = await getActivity(activityId);
 
@@ -484,20 +563,26 @@ export default function InsightsList() {
                     updateSelectedInsight({ newStage: activity.new_value, insightId, activityId });
                     updateListInsightCache({ newStage: activity.new_value, insightId });
                   }
-                  if (completeActivity) addActivityToActivityLog({ activity: completeActivity, insightId });
+                  addActivityToSelectedInsightActivityLog({ activity: completeActivity, insightId });
                 } else {
                   updateListInsightCache({ insightId });
+                }
+                if (boardActivitySheetVisibleRef.current) {
+                  addActivityToBoardActivityLog({ activity: completeActivity });
                 }
               } else if (activity.action === INSIGHT_ACTIVITY_ACTIONS.CREATE) {
                 updateListInsightCache({ insightId });
 
-                const activity = await getActivity(activityId);
-                if (activity) {
+                const completeActivity = await getActivity(activityId);
+                if (completeActivity) {
                   Toast.show({
                     type: 'info',
-                    text1: `${activity.user.fullName} created "${activity.insight.title}"`,
+                    text1: `${completeActivity.user.fullName} created "${completeActivity.insight.title}"`,
                     position: 'bottom',
                   });
+                }
+                if (boardActivitySheetVisibleRef.current) {
+                  addActivityToBoardActivityLog({ activity: completeActivity, activityId });
                 }
               } else if (activity.action === INSIGHT_ACTIVITY_ACTIONS.EDIT) {
                 const insight = await getInsight(insightId);
@@ -505,7 +590,10 @@ export default function InsightsList() {
 
                 if (insightId === selectedInsightRef.current?.id) {
                   if (insight) updateSelectedInsight({ insight, insightId, activityId });
-                  addActivityToActivityLog({ activityId, insightId });
+                  addActivityToSelectedInsightActivityLog({ activityId, insightId });
+                }
+                if (boardActivitySheetVisibleRef.current) {
+                  addActivityToBoardActivityLog({ activityId });
                 }
               }
             } catch (error) {
@@ -525,122 +613,148 @@ export default function InsightsList() {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Tabs */}
-      <View
-        style={{
-          paddingTop: 12,
-          paddingBottom: 8,
-        }}
-      >
-        <SegmentedButtons
-          value={selectedStage}
-          onValueChange={setSelectedStage}
-          density="small"
-          buttons={stages.map((stage) => ({
-            value: stage,
-            label: `(${segregatedInsights[stage].length ?? 0}) ${capitalize(stage)}`,
-          }))}
+    <View style={{ flex: 1, }}>
+      {/* MAIN CONTENT */}
+      <View style={{ flex: 1, paddingHorizontal: 12, }}>
+        {/* Tabs */}
+        <View
+          style={{
+            paddingTop: 12,
+            paddingBottom: 8,
+          }}
+        >
+          <SegmentedButtons
+            value={selectedStage}
+            onValueChange={setSelectedStage}
+            density="small"
+            buttons={stages.map((stage) => ({
+              value: stage,
+              label: `(${segregatedInsights[stage].length ?? 0}) ${capitalize(stage)}`,
+            }))}
+          />
+        </View>
+
+        {/* FILTER BAR */}
+        <FilterBar
+          search={search}
+          setSearch={setSearch}
+          selectedPriorities={selectedPriorities}
+          setSelectedPriorities={setSelectedPriorities}
+          onClear={() => {
+            setSearch('');
+            setSelectedPriorities([]);
+          }}
+        />
+
+        {loading && (
+          <ActivityIndicator />
+        )}
+        {error && (
+          <View style={{
+            padding: 16,
+            borderWidth: 1,
+            borderColor: "#F44336",
+            borderRadius: 4,
+            backgroundColor: "rgba(244, 67, 54, 0.1)"
+          }}>
+            <Text>Encountered error while fetching insight list: {error?.message}</Text>
+          </View>
+        )}
+
+        {/* INSIGHT CARDS LIST */}
+        <FlatList
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingBottom: 24
+          }}
+          data={segregatedInsights[selectedStage]}
+          keyExtractor={(item) => item.node.nodeId}
+          renderItem={({ item }) => {
+            const insight = item.node;
+
+            return (
+              <>
+                <Pressable
+                  onPress={() => {
+                    setSelectedInsight(insight);
+                    setDetailSheetVisible(true);
+                  }}
+                  onLongPress={() => {
+                    setInsightToEdit(insight);
+                    setStageSelectorVisible(true);
+                  }}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: higthlightedInsightId === insight.id ? 'yellow' : 'transparent',
+                  }}
+                >
+                  <InsightCard insight={insight} updateStage={updateStage} />
+                </Pressable>
+                <Divider />
+              </>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={{
+              flex: 1,
+              padding: 8,
+              justifyContent: 'center',
+            }}>
+              <Text style={{ textAlign: 'center' }}>{loading ? 'Loading...' : 'No insights'}</Text>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={() => { refetchInsightsList() }}
+            />
+          }
         />
       </View>
-
-      {/* FILTER BAR */}
-      <FilterBar
-        search={search}
-        setSearch={setSearch}
-        selectedPriorities={selectedPriorities}
-        setSelectedPriorities={setSelectedPriorities}
-        onClear={() => {
-          setSearch('');
-          setSelectedPriorities([]);
-        }}
-      />
-
-      {loading && (
-        <ActivityIndicator />
-      )}
-
-      {error && (
-        <View style={{
-          padding: 16,
-          borderWidth: 1,
-          borderColor: "#F44336",
-          borderRadius: 4,
-          backgroundColor: "rgba(244, 67, 54, 0.1)"
-        }}>
-          <Text>Encountered error while fetching insight list: {error?.message}</Text>
+      {/* BOTTOM TABS */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 4 }]}>
+        <View style={styles.tab}>
+          <Pressable
+            style={styles.tabContent}
+            onPress={() => {
+              setBoardActivitySheetVisible(true);
+              setUnreadActivityCount(0);
+            }}>
+            {(unreadActivityCount > 0) && (
+              <View style={styles.unreadNotificationsBadge}>
+                <Text variant='bodySmall' style={{ textAlign: 'center' }}>{unreadActivityCount}</Text>
+              </View>
+            )}
+            <Ionicons name="notifications-outline" size={32} color="white" />
+            <Text variant='bodySmall' style={{ textAlign: 'center' }}>Notifications</Text>
+          </Pressable>
         </View>
-      )}
+        <View style={styles.tab}>
+          <Pressable
+            style={styles.tabContent}
+            onPress={() => {
+              setAnalyticsSheetVisible(true);
+            }}
+          >
+            <Ionicons name="bar-chart" size={32} color="white" />
+            <Text variant='bodySmall' style={{ textAlign: 'center' }}>Analytics</Text>
+          </Pressable>
+        </View>
+        <View style={styles.tab}>
+          <Pressable
+            style={styles.tabContent}
+            onPress={() => {
+              setCreateInsightFormVisible(true);
+            }}
+          >
+            <Ionicons name="add" size={32} color="white" />
+            <Text variant='bodySmall' style={{ textAlign: 'center' }}>Create</Text>
+          </Pressable>
+        </View>
+      </View>
 
-      <FlatList
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingBottom: 100
-        }}
-        data={segregatedInsights[selectedStage]}
-        keyExtractor={(item) => item.node.nodeId}
-        renderItem={({ item }) => {
-          const insight = item.node;
-
-          return (
-            <>
-              <Pressable
-                onPress={() => {
-                  setSelectedInsight(insight);
-                  setDetailSheetVisible(true);
-                }}
-                onLongPress={() => {
-                  setInsightToEdit(insight);
-                  setStageSelectorVisible(true);
-                }}
-              >
-                <InsightCard insight={insight} updateStage={updateStage} />
-              </Pressable>
-              <Divider />
-            </>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={{
-            flex: 1,
-            padding: 8,
-            justifyContent: 'center',
-          }}>
-            <Text style={{ textAlign: 'center' }}>{loading ? 'Loading...' : 'No insights'}</Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={() => { refetchInsightsList() }}
-          />
-        }
-      />
-
-      <Pressable
-        onPress={() => {
-          setCreateInsightFormVisible(true);
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: '#3F51B5',
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6, // Android shadow
-          shadowColor: '#000', // iOS shadow
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={32} color="white" />
-      </Pressable>
-      {(createInsightFormVisible && insightToEdit) && (
+      {/* CREATE INSIGHT */}
+      {(createInsightFormVisible) && (
         <CreateInsightForm
           visible={createInsightFormVisible}
           setVisible={setCreateInsightFormVisible}
@@ -649,29 +763,7 @@ export default function InsightsList() {
         />
       )}
 
-      <Pressable
-        onPress={() => {
-          setAnalyticsSheetVisible(true);
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          left: 24,
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: '#3F51B5',
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6, // Android shadow
-          shadowColor: '#000', // iOS shadow
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="bar-chart" size={32} color="white" />
-      </Pressable>
+      {/* ANALYTICS */}
       {analyticsSheetVisible && (
         <AnalyticsBottomSheet
           visible={analyticsSheetVisible}
@@ -682,6 +774,7 @@ export default function InsightsList() {
         />
       )}
 
+      {/* INSIGHT DETAIL SHEET */}
       {(detailSheetVisible && selectedInsight) && (
         <InsightDetailSheet
           visible={detailSheetVisible}
@@ -703,12 +796,33 @@ export default function InsightsList() {
         />
       )}
 
+      {/* STAGE SELECTOR SHEET */}
       {(stageSelectorVisible && insightToEdit) && (
         <StageSelector
           visible={stageSelectorVisible}
           setVisible={setStageSelectorVisible}
           insight={insightToEdit}
           updateStage={updateStage}
+        />
+      )}
+
+      {/* BOARD ACTIVITY SHEET */}
+      {boardActivitySheetVisible && (
+        <BoardActivity
+          visible={boardActivitySheetVisible}
+          setVisible={setBoardActivitySheetVisible}
+          onPress={(insightId: string, insightStage: string) => {
+            setBoardActivitySheetVisible(false);
+            if (insightStage) setSelectedStage(insightStage);
+            scrollToHigthlightedInsight();
+            if (insightId) {
+              setHigthlightedInsightId(insightId);
+              const timer = setTimeout(() => {
+                setHigthlightedInsightId(null);
+                clearTimeout(timer);
+              }, 1000)
+            }
+          }}
         />
       )}
     </View>

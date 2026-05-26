@@ -1,6 +1,10 @@
 export type ActivityResponseType = {
   insightActivitiesCollection: {
     edges: ActivityNodeType[];
+    pageInfo: {
+      hasNextPage: boolean;
+      endCursor: string | null;
+    };
   }
 }
 export type ActivityNodeType = {
@@ -20,6 +24,7 @@ export type Activity = {
   insight: {
     id: string;
     title: string;
+    stage: string;
   }
 };
 export type ActivitySubscriptionType = {
@@ -29,6 +34,6 @@ export type ActivitySubscriptionType = {
   old_value?: string | null;
   new_value?: string | null;
   created_at: string;
-  user_id:string;
+  user_id: string;
   insight_id: string;
 };
