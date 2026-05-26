@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { InsightNodeType, ListInsightResponseType, InsightType } from '../../type/InsightType';
 import { Activity, ActivityResponseType, ActivitySubscriptionType } from '../../type/ActivityType';
+import { CategoriesType } from '../../type/categoriesType';
+import { HCPType } from '../../type/HCPType';
+import { TagType } from '../../type/tagType';
 
 import stages from '../../constants/stages';
 import { INSIGHT_ACTIVITY_ACTIONS } from '../../constants/activityAction';
@@ -36,11 +39,11 @@ import {
   ActivityIndicator,
 } from 'react-native-paper';
 import InsightCard from './InsightCard';
-import FilterBar from './FilterBar';
+import FilterBar from './filters';
 import InsightDetailSheet from '../insight-detail-sheet';
 import CreateInsightForm from '../create-insight';
 import AnalyticsBottomSheet from '../analytics';
-import StageSelector from '../stage-selector/stageSelector';
+import StageSelector from '../stage-selector';
 import Toast from 'react-native-toast-message';
 import BoardActivity from '../board-activity';
 
@@ -54,8 +57,6 @@ export default function InsightsList() {
     selectedStageRef.current = selectedStage;
   }, [selectedStage]);
 
-  const [search, setSearch] = useState('');
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
 
   const [selectedInsight, setSelectedInsight] = useState<InsightType | null>(null);
   const selectedInsightRef = useRef<InsightType>(null);
@@ -91,6 +92,14 @@ export default function InsightsList() {
   }, [boardActivitySheetVisible]);
   const [unreadActivityCount, setUnreadActivityCount] = useState<number>(0);
 
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<{
+    priorities?: string[];
+    category?: CategoriesType;
+    stage?: string;
+    hcp?: HCPType;
+    tags?: TagType[];
+  }>({});
   const debouncedSearch = useDebounce(search, 300);
   const filter = React.useMemo(() => {
     const conditions: any[] = [];
@@ -104,16 +113,39 @@ export default function InsightsList() {
       });
     }
 
-    if (selectedPriorities.length > 0) {
+    if (filters?.priorities && filters?.priorities?.length > 0) {
       conditions.push({
         priority: {
-          in: selectedPriorities,
+          in: filters.priorities,
+        },
+      });
+    }
+
+    if (filters?.category) {
+      conditions.push({
+        categoryId: {
+          eq: filters.category.id,
+        },
+      });
+    }
+
+    if (filters?.stage) {
+      conditions.push({
+        stage: {
+          eq: filters.stage,
+        },
+      });
+    }
+    if (filters?.hcp) {
+      conditions.push({
+        hcpId: {
+          eq: filters.hcp.id,
         },
       });
     }
 
     return conditions.length > 0 ? { and: conditions } : {};
-  }, [debouncedSearch, selectedPriorities]);
+  }, [debouncedSearch, filters]);
 
   const {
     data,
@@ -638,12 +670,12 @@ export default function InsightsList() {
         <FilterBar
           search={search}
           setSearch={setSearch}
-          selectedPriorities={selectedPriorities}
-          setSelectedPriorities={setSelectedPriorities}
           onClear={() => {
             setSearch('');
-            setSelectedPriorities([]);
+            setFilters({});
           }}
+          filters={filters}
+          setFilters={setFilters}
         />
 
         {loading && (
@@ -760,6 +792,8 @@ export default function InsightsList() {
           setVisible={setCreateInsightFormVisible}
           editFlow={editInsightFlow}
           insight={insightToEdit}
+          triggerRefetch={debouncedSearch.trim().length > 0 || Object.keys(filters).length > 0}
+          refetch={() => { refetchInsightsList() }}
         />
       )}
 
