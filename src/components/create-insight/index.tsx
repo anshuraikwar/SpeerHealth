@@ -329,7 +329,7 @@ export default function CreateInsightForm({
     }
   }, [insight]);
 
-  const { data: tagsData, loading: loadingTags, error: tagsError, networkStatus: tagsNetworkStatus, } = useQuery<TagResponseType>(LIST_TAGS, {
+  const { data: tagsData, loading: loadingTags, error: tagsError, networkStatus: tagsNetworkStatus, } = useQuery(LIST_TAGS, {
     fetchPolicy: 'cache-and-network',
   });
   const isInitialLoadingTags = loadingTags && tagsNetworkStatus === NetworkStatus.loading;
@@ -337,7 +337,7 @@ export default function CreateInsightForm({
     edge => edge.node
   ) ?? [];
 
-  const { data: categoriesData, loading: loadingCategories, error: categoriesError, networkStatus: categoriesNetworkStatus, } = useQuery<CategoriesResponseType>(LIST_CATEGORIES, {
+  const { data: categoriesData, loading: loadingCategories, error: categoriesError, networkStatus: categoriesNetworkStatus, } = useQuery(LIST_CATEGORIES, {
     fetchPolicy: 'cache-and-network',
   });
   const isInitialLoadingCategories = loadingCategories && categoriesNetworkStatus === NetworkStatus.loading;
@@ -345,7 +345,7 @@ export default function CreateInsightForm({
     edge => edge.node
   ) ?? [];
 
-  const { data: HCPData, loading: loadingHCPs, error: HCPsError, networkStatus: HCPNetworkStatus, } = useQuery<HCPResponseType>(LIST_HCPS, {
+  const { data: HCPData, loading: loadingHCPs, error: HCPsError, networkStatus: HCPNetworkStatus, } = useQuery(LIST_HCPS, {
     fetchPolicy: 'cache-and-network',
   });
   const isInitialLoadingHCPs = loadingHCPs && HCPNetworkStatus === NetworkStatus.loading;

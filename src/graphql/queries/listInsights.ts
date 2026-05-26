@@ -1,6 +1,12 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import { ListInsightResponseType } from '../../type/InsightType';
 
-export const LIST_INSIGHTS = gql`
+export const LIST_INSIGHTS: TypedDocumentNode<
+  ListInsightResponseType,
+  {
+    filter?: any;
+  }
+> = gql`
   query ListInsights($cursor: Cursor, $first: Int = 20, $filter: InsightsFilter) {
     insightsCollection(
       first: $first

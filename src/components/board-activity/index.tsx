@@ -41,7 +41,7 @@ export default function BoardActivity({
     error: activityError,
     fetchMore: fetchMoreActivity,
     networkStatus,
-  } = useQuery<ActivityResponseType>(LIST_INSIGHT_ACTIVITY, {
+  } = useQuery(LIST_INSIGHT_ACTIVITY, {
     variables: {
       first: 20,
       filter: {},

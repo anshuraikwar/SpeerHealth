@@ -156,7 +156,7 @@ export default function InsightsList() {
     loading,
     error,
     refetch: refetchInsightsList
-  } = useQuery<ListInsightResponseType>(LIST_INSIGHTS, {
+  } = useQuery(LIST_INSIGHTS, {
     variables: {
       filter,
     },

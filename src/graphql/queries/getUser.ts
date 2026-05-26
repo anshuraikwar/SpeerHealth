@@ -1,6 +1,12 @@
-import { gql } from "@apollo/client";
+import { gql, TypedDocumentNode } from "@apollo/client";
+import { UserResponseType } from "../../type/userType";
 
-export const GET_USER = gql`
+export const GET_USER: TypedDocumentNode<
+  UserResponseType,
+  {
+    id?: string;
+  }
+> = gql`
   query GetUser($id: UUID!) {
     usersCollection(
       filter: {

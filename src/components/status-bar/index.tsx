@@ -38,7 +38,7 @@ export default function StatusBar() {
     getCurrentUser();
   }, []);
 
-  const { data } = useQuery<UserResponseType>(GET_USER, {
+  const { data } = useQuery(GET_USER, {
     variables: {
       id: currentUserId,
     },

@@ -1,6 +1,12 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import { HCPResponseType } from '../../type/HCPType';
 
-export const LIST_HCPS = gql`
+export const LIST_HCPS: TypedDocumentNode<
+  HCPResponseType,
+  {
+    filter?: any;
+  }
+> = gql`
   query ListCategories($cursor: Cursor) {
     hcpsCollection(after: $cursor) {
       edges {

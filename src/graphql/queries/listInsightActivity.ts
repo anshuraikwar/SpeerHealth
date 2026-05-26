@@ -1,6 +1,14 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import { ActivityResponseType } from '../../type/ActivityType';
 
-export const LIST_INSIGHT_ACTIVITY = gql`
+export const LIST_INSIGHT_ACTIVITY: TypedDocumentNode<
+  ActivityResponseType,
+  {
+    cursor?: string | null;
+    first?: number;
+    filter?: any;
+  }
+> = gql`
   query GetInsightActivities(
     $cursor: Cursor, 
     $first: Int = 5

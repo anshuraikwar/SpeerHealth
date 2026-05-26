@@ -50,7 +50,7 @@ export default function InsightDetailSheet({
     priorityColors[insight?.priority] ??
     priorityColors.P4;
 
-  const { data, loading: loadingActivity, error: activityError } = useQuery<ActivityResponseType>(LIST_INSIGHT_ACTIVITY, {
+  const { data, loading: loadingActivity, error: activityError } = useQuery(LIST_INSIGHT_ACTIVITY, {
     variables: {
       filter: {
         insightId: {
