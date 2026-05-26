@@ -81,6 +81,11 @@ export default function InsightsList() {
   }, [createInsightFormVisible]);
 
   const [stageSelectorVisible, setStageSelectorVisible] = useState(false);
+  useEffect(() => {
+    if (!stageSelectorVisible) {
+      setInsightToEdit(null);
+    }
+  }, [stageSelectorVisible]);
 
   const [analyticsSheetVisible, setAnalyticsSheetVisible] = useState(false);
 

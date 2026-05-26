@@ -30,6 +30,7 @@ import {
 import {
   Button,
   Chip,
+  IconButton,
   Portal,
   Surface,
   Text,
@@ -262,7 +263,10 @@ export default function FiltersBottomSheet({
                             <Chip
                               key={category.id}
                               selected={field.value === category.id}
-                              onPress={() => field.onChange(category.id)}
+                              onPress={() => {
+                                if (field.value === category.id) field.onChange('');
+                                else field.onChange(category.id)
+                              }}
                               mode={field.value === category.id ? 'flat' : 'outlined'}
                               style={{
                                 borderRadius: 999,
@@ -293,7 +297,10 @@ export default function FiltersBottomSheet({
                             <Chip
                               key={stage}
                               selected={field.value === stage}
-                              onPress={() => field.onChange(stage)}
+                              onPress={() => {
+                                if (field.value === stage) field.onChange('');
+                                else field.onChange(stage)
+                              }}
                               mode={field.value === stage ? 'flat' : 'outlined'}
                               style={{
                                 borderRadius: 999,
@@ -315,7 +322,7 @@ export default function FiltersBottomSheet({
                       const selectedHCP = HCPs.find(hcp => hcp.id === field.value)?.name;
 
                       return (
-                        <View style={{ marginTop: 16, flexDirection: 'column' }}>
+                        <View style={{ marginTop: 16, flexDirection: 'column', gap: 8 }}>
                           <Text variant="titleSmall">Linked HCP</Text>
                           {HCPsError && (
                             <View style={{
@@ -323,7 +330,6 @@ export default function FiltersBottomSheet({
                               borderWidth: 1,
                               borderColor: "#F44336",
                               borderRadius: 4,
-                              marginTop: 8,
                               backgroundColor: "rgba(244, 67, 54, 0.1)"
                             }}>
                               <Text>Encountered error while fetching HCPs: {HCPsError?.message}</Text>
@@ -332,7 +338,6 @@ export default function FiltersBottomSheet({
                           <View style={{ position: 'relative', }}>
                             <Pressable style={{ margin: 0 }} onPress={() => setShowHCPDropDown(true)}>
                               <TextInput
-                                label="Linked HCP"
                                 mode="outlined"
                                 placeholder={isInitialLoadingHCPs ? 'Loading...' : 'Search HCPs'}
                                 value={selectedHCP}
@@ -342,6 +347,16 @@ export default function FiltersBottomSheet({
                                 readOnly
                               />
                             </Pressable>
+                            {selectedHCP && (
+                              <IconButton
+                                icon="close"
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                }}
+                                onPress={() => { field.onChange(null); }}
+                              />
+                            )}
                             {showHCPDropDown && (
                               <View style={{
                                 position: 'absolute',
