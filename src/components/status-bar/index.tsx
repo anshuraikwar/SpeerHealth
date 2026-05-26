@@ -60,10 +60,10 @@ export default function StatusBar() {
 
   return (
     <>
-      <View style={[{
+      <View style={[styles.wrapper, {
         paddingTop: insets.top,
         backgroundColor: "#3F51B5",
-      }, styles.wrapper]}>
+      }]}>
         <View style={styles.container}>
           <View style={styles.statusBar}>
             <Text variant={"titleLarge"} style={{ color: "#fff" }}>Insight Board</Text>

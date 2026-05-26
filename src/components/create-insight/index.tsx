@@ -183,7 +183,6 @@ export default function CreateInsightForm({
       isValid,
     },
     reset,
-    watch,
   } = useForm<InsightFormValues>({
     resolver: zodResolver(insightSchema),
 
@@ -239,7 +238,6 @@ export default function CreateInsightForm({
   ) ?? [];
 
   const handleClose = () => {
-
     if (isDirty) {
       Alert.alert(
         'Discard changes?',
@@ -280,15 +278,17 @@ export default function CreateInsightForm({
 
       const payload: CreateInsightType = {
         title: values.title,
-        description: values.description,
         priority: values.priority,
         stage: values.stage,
-        drugName: values.drugName,
       }
-      if (editFlow) {
-        payload['hcpId'] = values.linkedHCP;
-        payload['categoryId'] = values.category;
 
+      // Append optional fields
+      if (values.description) payload['description'] = values.description;
+      if (values.drugName) payload['drugName'] = values.drugName;
+      if (values.linkedHCP) payload['hcpId'] = values.linkedHCP;
+      if (values.category) payload['categoryId'] = values.category;
+
+      if (editFlow) {
         const response = await updateInsight({
           variables: {
             filter: {
@@ -344,9 +344,8 @@ export default function CreateInsightForm({
           position: 'bottom',
         });
       } else {
-        if (currentUserId) {
-          payload['createdBy'] = currentUserId;
-        }
+        if (currentUserId) payload['createdBy'] = currentUserId;
+
         const result = await createInsight({
           variables: {
             input: [
