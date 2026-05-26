@@ -50,6 +50,17 @@ const cache = new InMemoryCache({
 
     return defaultDataIdFromObject(responseObject);
   },
+  typePolicies: {
+    Insights: {
+      fields: {
+        insightTagsCollection: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+      },
+    },
+  },
 });
 
 export const apolloClient = new ApolloClient({

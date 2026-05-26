@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { styles } from './styles';
 
-import { TagResponseType } from '../../type/tagType';
+import { CreateInsightTagsResponseType, TagResponseType } from '../../type/tagType';
 import { CategoriesResponseType } from '../../type/categoriesType';
 import { CreateInsightResponseType, CreateInsightType, InsightType, UpdateInsightResponseType } from '../../type/InsightType';
 import { HCPResponseType } from '../../type/HCPType';
@@ -32,6 +32,7 @@ import { LIST_CATEGORIES } from '../../graphql/queries/listCategories';
 import { CREATE_INSIGHT } from '../../graphql/mutations/createInsight';
 import { UPDATE_INSIGHT } from '../../graphql/mutations/updateInsight';
 import { CREATE_INSIGHT_ACTIVITY } from '../../graphql/mutations/createInsigntActivity';
+import { CREATE_INSIGHT_TAGS } from '../../graphql/mutations/createInsightTags';
 
 import {
   Modal,
@@ -65,6 +66,32 @@ export default function CreateInsightForm({
   triggerRefetch: boolean;
   refetch: () => void;
 }) {
+  const {
+    control,
+    handleSubmit,
+    formState: {
+      errors,
+      isDirty,
+      isValid,
+    },
+    reset,
+  } = useForm<InsightFormValues>({
+    resolver: zodResolver(insightSchema),
+
+    mode: 'onChange',
+
+    defaultValues: {
+      title: '',
+      description: '',
+      priority: '',
+      category: '',
+      stage: '',
+      linkedHCP: '',
+      drugName: '',
+      tags: [''],
+    },
+  });
+
   const [createInsight, { loading: creating }] = useMutation<CreateInsightResponseType>(CREATE_INSIGHT, {
     update(cache, { data }) {
       const newInsight = data?.insertIntoInsightsCollection?.records?.[0];
@@ -128,7 +155,76 @@ export default function CreateInsightForm({
           }),
 
           fragment: gql`
-          fragment UpdatedInsight on Insights {
+            fragment UpdatedInsight on Insights {
+              title
+              description
+              stage
+              priority
+              columnOrder
+              drugName
+              customFields
+              createdAt
+              updatedAt
+
+              hcp {
+                nodeId
+                id
+                name
+                specialty
+                institution
+              }
+
+              category {
+                nodeId
+                id
+                name
+                color
+              }
+
+              insightTagsCollection {
+                edges {
+                  node {
+                    tag {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          `,
+
+          data: {
+            __typename: 'Insights',
+            ...updatedInsight,
+          },
+        });
+      }
+    },
+  });
+  const loading = creating || updating;
+
+  const [createInsightTags] = useMutation<CreateInsightTagsResponseType>(
+    CREATE_INSIGHT_TAGS, {
+    update(cache, { data }) {
+      const newRows =
+        data?.insertIntoInsightTagsCollection?.records;
+
+      if (!newRows?.length) return;
+
+      const insightNodeId = newRows[0].insight.nodeId;
+
+      // write to cache
+      const existingInsight: InsightType | null = cache.readFragment({
+        id: cache.identify({
+          __typename: 'Insights',
+          nodeId: insightNodeId,
+        }),
+
+        fragment: gql`
+          fragment ExistingInsight on Insights {
+            nodeId
+            id
             title
             description
             stage
@@ -138,21 +234,47 @@ export default function CreateInsightForm({
             customFields
             createdAt
             updatedAt
+          }
+        `,
+      });
 
-            hcp {
-              nodeId
-              id
-              name
-              specialty
-              institution
-            }
+      if (!existingInsight) return;
 
-            category {
-              nodeId
-              id
-              name
-              color
-            }
+      // 2. Create new edges
+      const newEdges = newRows.map((row: any) => ({
+        __typename: 'InsightTagsEdge',
+
+        node: {
+          __typename: 'InsightTags',
+
+          tag: {
+            __typename: 'Tags',
+            id: row.tag.id,
+            name: row.tag.name,
+          },
+        },
+      }));
+
+      // 3. Write updated insight back
+      cache.writeFragment({
+        id: cache.identify({
+          __typename: 'Insights',
+          nodeId: insightNodeId,
+        }),
+
+        fragment: gql`
+          fragment UpdatedInsight on Insights {
+            nodeId
+            id
+            title
+            description
+            stage
+            priority
+            columnOrder
+            drugName
+            customFields
+            createdAt
+            updatedAt
 
             insightTagsCollection {
               edges {
@@ -167,16 +289,22 @@ export default function CreateInsightForm({
           }
         `,
 
-          data: {
-            __typename: 'Insights',
-            ...updatedInsight,
+        data: {
+          ...existingInsight,
+
+          insightTagsCollection: {
+            ...existingInsight.insightTagsCollection,
+
+            edges: [
+              ...(existingInsight.insightTagsCollection?.edges || []),
+
+              ...newEdges,
+            ],
           },
-        });
-      }
+        },
+      });
     },
   });
-  const loading = creating || updating;
-
   const [createInsightActivity] = useMutation(
     CREATE_INSIGHT_ACTIVITY
   );
@@ -184,32 +312,6 @@ export default function CreateInsightForm({
   const [showHCPDropDown, setShowHCPDropDown] =
     useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    formState: {
-      errors,
-      isDirty,
-      isValid,
-    },
-    reset,
-  } = useForm<InsightFormValues>({
-    resolver: zodResolver(insightSchema),
-
-    mode: 'onChange',
-
-    // TODO: UNDO
-    defaultValues: {
-      title: new Date().toISOString(),
-      description: 'Test insight',
-      priority: 'P4',
-      category: '',
-      stage: 'observation',
-      linkedHCP: '',
-      drugName: 'Test Drug',
-      tags: [],
-    },
-  });
 
   useEffect(() => {
     if (insight) {
@@ -371,6 +473,17 @@ export default function CreateInsightForm({
           result.data?.insertIntoInsightsCollection?.records?.[0];
 
         if (createdInsight) {
+          if (values.tags && values.tags.length > 0) {
+            await createInsightTags({
+              variables: {
+                input: values.tags.map((tag) => ({
+                  insightId: createdInsight.id,
+                  tagId: tag
+                }))
+              },
+            });
+          }
+
           await createInsightActivity({
             variables: {
               input: [

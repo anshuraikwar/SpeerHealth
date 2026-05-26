@@ -57,7 +57,6 @@ export default function InsightsList() {
     selectedStageRef.current = selectedStage;
   }, [selectedStage]);
 
-
   const [selectedInsight, setSelectedInsight] = useState<InsightType | null>(null);
   const selectedInsightRef = useRef<InsightType>(null);
   useEffect(() => {
