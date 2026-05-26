@@ -29,7 +29,7 @@ export type InsightType = {
   priority: string;
   columnOrder: number;
   drugName: string;
-  customFields: Record<string, string>;
+  customFields: string;
   createdAt: string;
   updatedAt: string;
   hcp: {
@@ -62,7 +62,7 @@ export type CreateInsightType = {
   stage: string;
   priority: string;
   drugName?: string;
-  customFields?: Record<string, string>;
+  customFields?: string;
   hcpId?: string;
   categoryId?: string;
   createdBy?: string;

@@ -142,7 +142,9 @@ export default function InsightDetailSheet({
                   </View>
                 )}
 
-                <Divider style={{ marginVertical: 8 }} />
+                {(insight.hcp || insight.drugName) && (
+                  <Divider style={{ marginVertical: 8 }} />
+                )}
 
                 {/* PRIORITY */}
                 <View style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -285,10 +287,31 @@ export default function InsightDetailSheet({
                   </>
                 )}
 
+                {/* CUSTOM FIELDS */}
+                {insight?.customFields && Object.keys(JSON.parse(insight?.customFields)).length > 0 && (
+                  <>
+                    <Divider style={{ marginVertical: 8 }} />
+                    <View style={{ marginTop: 8, gap: 10, flexDirection: 'column' }}>
+                      <Text variant="titleMedium" style={{ marginBottom: 4, }}>
+                        Custom Fields
+                      </Text>
+
+                      <View style={{ marginBottom: 8, gap: 4, flexDirection: 'column' }}>
+                        {Object.keys(JSON.parse(insight.customFields)).map((field) => (
+                          <View key={field} style={{ gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Text>{field}</Text>
+                            <Text>{JSON.parse(insight.customFields)[field]}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  </>
+                )}
+
                 <Divider style={{ marginVertical: 8 }} />
 
                 {/* ACTIVITY TIMELINE */}
-                <View style={{ marginBottom: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ marginVertical: 8, gap: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text variant="titleMedium">
                     Activity Timeline
                   </Text>
