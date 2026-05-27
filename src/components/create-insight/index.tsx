@@ -122,7 +122,7 @@ export default function CreateInsightForm({
       stage: '',
       linkedHCP: '',
       drugName: '',
-      tags: [''],
+      tags: [],
     },
   });
 
@@ -455,6 +455,7 @@ export default function CreateInsightForm({
         })
         .catch((error) => {
         });
+      console.log('currentUserId: ', currentUserId);
 
       const payload: CreateInsightType = {
         title: values.title,
@@ -515,7 +516,7 @@ export default function CreateInsightForm({
         return;
       }
 
-      if (editFlow) {
+      if (editFlow && insight) {
         const response = await updateInsight({
           variables: {
             filter: {
@@ -585,7 +586,9 @@ export default function CreateInsightForm({
           result.data?.insertIntoInsightsCollection?.records?.[0];
 
         if (createdInsight) {
+          console.log('values.tags: ', values.tags);
           if (values.tags && values.tags.length > 0) {
+            console.log('creating tags')
             await createInsightTags({
               variables: {
                 input: values.tags.map((tag) => ({
@@ -997,7 +1000,7 @@ export default function CreateInsightForm({
                       </View>
                     )}
                   />
-                  
+
                   {/* CUSTOM FIELDS */}
                   <View style={{ marginTop: 32, flexDirection: 'column', gap: 8 }}>
                     <Text variant="titleSmall">Custom Fields</Text>
