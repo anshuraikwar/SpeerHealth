@@ -68,29 +68,7 @@ export default function AnalyticsBottomSheet({
       legendFontSize: 12,
     },
   ];
-  const funnelStages = [
-    {
-      label: 'Observation',
-      value: segregatedInsights.observation.length ?? 0,
-      color: '#3B82F6',
-    },
-    {
-      label: 'Insight',
-      value: segregatedInsights.insight.length ?? 0,
-      color: '#8B5CF6',
-    },
-    {
-      label: 'Actionable',
-      value: segregatedInsights.actionable.length ?? 0,
-      color: '#F59E0B',
-    },
-    {
-      label: 'Impact',
-      value: segregatedInsights.impact.length ?? 0,
-      color: '#10B981',
-    },
-  ];
-
+  
   const buildWeeklyChartData = (
     insights: InsightNodeType[]
   ) => {

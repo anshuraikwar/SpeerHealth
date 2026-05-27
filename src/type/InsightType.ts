@@ -61,9 +61,9 @@ export type CreateInsightType = {
   description?: string;
   stage: string;
   priority: string;
-  drugName?: string;
   customFields?: string;
   hcpId?: string;
   categoryId?: string;
   createdBy?: string;
+  drugName?: string;
 }
